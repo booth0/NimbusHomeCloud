@@ -4,10 +4,62 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-NimbusHomeCloud is a home cloud platform currently in early development. The repository contains only initial scaffolding — no build system, source code, or architecture has been established yet.
+NimbusHomeCloud is a home cloud platform in early development.
 
-As development begins, update this file with:
-- Build, lint, and test commands
-- Technology stack and framework choices
-- High-level architecture and component overview
-- Key configuration and environment setup
+## Stack
+
+- **Server**: Node.js + Express — `server/`
+- **Client**: React + Vite — `client/`
+
+## Commands
+
+### Server
+
+```bash
+cd server
+npm install       # install dependencies
+npm run dev       # start with nodemon (port 5000)
+npm start         # start without nodemon
+```
+
+### Client
+
+```bash
+cd client
+npm install       # install dependencies
+npm run dev       # Vite dev server (port 5173)
+npm run build     # production build → client/dist/
+npm run preview   # preview production build
+```
+
+## Architecture
+
+```
+NimbusHomeCloud/
+├── server/
+│   ├── src/index.js    # Express app, /api/* routes
+│   └── package.json
+├── client/
+│   ├── src/
+│   │   ├── main.jsx    # React entry point
+│   │   ├── App.jsx     # Root component
+│   │   └── App.css
+│   ├── index.html
+│   ├── vite.config.js  # Proxies /api → localhost:5000
+│   └── package.json
+├── .gitignore
+├── README.md
+└── CLAUDE.md
+```
+
+## API Endpoints
+
+| Method | Path | Response |
+|--------|------|----------|
+| GET | /api/hello | `{ message: "Hello from Nimbus!" }` |
+
+## Dev Notes
+
+- Vite proxies `/api` to `http://localhost:5000` — no CORS config needed in development.
+- Server uses `process.env.PORT` with fallback to 5000.
+- Both servers must run simultaneously for full-stack dev (two terminals).
