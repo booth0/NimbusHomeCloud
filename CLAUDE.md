@@ -17,19 +17,19 @@ NimbusHomeCloud is a home cloud platform in early development.
 
 ```bash
 cd server
-npm install       # install dependencies
-npm run dev       # start with nodemon (port 5000)
-npm start         # start without nodemon
+pnpm install      # install dependencies
+pnpm dev          # start with nodemon (port 5000)
+pnpm start        # start without nodemon
 ```
 
 ### Client
 
 ```bash
 cd client
-npm install       # install dependencies
-npm run dev       # Vite dev server (port 5173)
-npm run build     # production build → client/dist/
-npm run preview   # preview production build
+pnpm install      # install dependencies
+pnpm dev          # Vite dev server (port 5173)
+pnpm build        # production build → client/dist/
+pnpm preview      # preview production build
 ```
 
 ## Architecture
