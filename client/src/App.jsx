@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import AuthForm from './components/AuthForm';
 import AdminPage from './components/AdminPage';
+import FileManager from './components/FileManager';
 
 function App() {
   const [user, setUser] = useState(null); // null = loading, false = logged out, {...} = logged in
@@ -67,7 +68,7 @@ function App() {
           </button>
         </div>
       </div>
-      <p className="message">You are signed in.</p>
+      <FileManager user={user} />
     </div>
   );
 }

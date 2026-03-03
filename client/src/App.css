@@ -253,3 +253,51 @@ h1 {
   font-size: 0.9rem;
   word-break: break-all;
 }
+
+/* ── File Manager ───────────────────────────────── */
+.file-manager { margin-top: 1.5rem; }
+.file-manager-toolbar { margin-bottom: 1rem; }
+
+.btn-upload {
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  background: #7eb8f7;
+  color: #0f1117;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+.btn-upload:hover { opacity: 0.85; }
+
+.file-error { color: #f87171; font-size: 0.875rem; margin-bottom: 0.75rem; }
+.file-empty { color: #8b8fa8; font-size: 0.9rem; }
+
+.file-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.file-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #2d3044;
+  color: #8b8fa8;
+  font-weight: 500;
+}
+.file-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #2d3044; color: #e2e4ef; }
+.file-table tr:last-child td { border-bottom: none; }
+.file-table tr:hover td { background: #1f2235; }
+
+.file-name { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-actions { display: flex; gap: 0.5rem; }
+
+.btn-file-action {
+  padding: 0.25rem 0.65rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+.btn-file-action:hover { opacity: 0.8; }
+.btn-download { background: #2d4a6e; color: #7eb8f7; }
+.btn-delete   { background: #4a1f2d; color: #f87171; }
