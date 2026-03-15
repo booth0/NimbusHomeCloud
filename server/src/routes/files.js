@@ -7,6 +7,7 @@ import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { File } from '../models/File.js';
 import { ShareLink } from '../models/ShareLink.js';
+import { UserShare } from '../models/UserShare.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const ALLOWED_EXPIRY = { '1h': 1, '24h': 24, '7d': 168, '30d': 720 }; // values unused, just for validation
@@ -160,6 +161,69 @@ router.delete('/:id/shares/:linkId', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/files/:id/share-with
+router.post('/:id/share-with', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ error: 'File not found' });
+    if (file.owner.toString() !== req.user.userId)
+      return res.status(403).json({ error: 'Access denied' });
+
+    const { userIds } = req.body;
+    if (!Array.isArray(userIds) || userIds.length === 0)
+      return res.status(400).json({ error: 'userIds must be a non-empty array' });
+
+    // Filter out the owner's own ID to prevent self-sharing
+    const recipients = userIds.filter(id => id !== req.user.userId);
+
+    // insertMany with ordered:false continues past duplicates; ignore duplicate key errors
+    await UserShare.insertMany(
+      recipients.map(id => ({ fileId: file._id, sharedBy: req.user.userId, sharedWith: id })),
+      { ordered: false }
+    ).catch(err => { if (err.code !== 11000) throw err; });
+
+    res.status(201).json({ message: 'File shared successfully' });
+  } catch (err) {
+    console.error('Share-with error:', err);
+    res.status(500).json({ error: 'Server error sharing file' });
+  }
+});
+
+// GET /api/files/:id/shared-with
+router.get('/:id/shared-with', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ error: 'File not found' });
+    if (file.owner.toString() !== req.user.userId)
+      return res.status(403).json({ error: 'Access denied' });
+
+    const shares = await UserShare.find({ fileId: file._id })
+      .populate('sharedWith', 'username')
+      .sort({ createdAt: -1 });
+
+    res.json({ sharedWith: shares.map(s => ({ _id: s.sharedWith._id, username: s.sharedWith.username })) });
+  } catch (err) {
+    console.error('Shared-with list error:', err);
+    res.status(500).json({ error: 'Server error listing shared users' });
+  }
+});
+
+// DELETE /api/files/:id/shared-with/:userId
+router.delete('/:id/shared-with/:userId', requireAuth, async (req, res) => {
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ error: 'File not found' });
+    if (file.owner.toString() !== req.user.userId)
+      return res.status(403).json({ error: 'Access denied' });
+
+    await UserShare.deleteOne({ fileId: file._id, sharedWith: req.params.userId });
+    res.json({ message: 'Share revoked' });
+  } catch (err) {
+    console.error('Share-with revoke error:', err);
+    res.status(500).json({ error: 'Server error revoking share' });
+  }
+});
+
 // DELETE /api/files/:id
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
@@ -169,7 +233,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
 
     fs.unlinkSync(file.path);
-    await file.deleteOne();
+    await Promise.all([
+      file.deleteOne(),
+      ShareLink.deleteMany({ fileId: file._id }),
+      UserShare.deleteMany({ fileId: file._id }),
+    ]);
     res.json({ message: 'File deleted' });
   } catch (err) {
     console.error('Delete error:', err);

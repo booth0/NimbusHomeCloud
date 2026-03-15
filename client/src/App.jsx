@@ -3,6 +3,7 @@ import './App.css';
 import AuthForm from './components/AuthForm';
 import AdminPage from './components/AdminPage';
 import FileManager from './components/FileManager';
+import SharedWithMe from './components/SharedWithMe';
 import SharePreview from './components/SharePreview';
 
 const shareToken = window.location.pathname.startsWith('/share/')
@@ -11,7 +12,7 @@ const shareToken = window.location.pathname.startsWith('/share/')
 
 function App() {
   const [user, setUser] = useState(null); // null = loading, false = logged out, {...} = logged in
-  const [page, setPage] = useState('dashboard'); // 'dashboard' | 'admin'
+  const [page, setPage] = useState('dashboard'); // 'dashboard' | 'shared' | 'admin'
 
   useEffect(() => {
     const token = localStorage.getItem('nimbus_token');
@@ -65,6 +66,18 @@ function App() {
         <div className="dashboard-actions">
           <span className={`role-badge role-${user.role}`}>{user.role}</span>
           <span className="username">Welcome, {user.username}</span>
+          <button
+            className={`btn-nav${page === 'dashboard' ? ' btn-nav--active' : ''}`}
+            onClick={() => setPage('dashboard')}
+          >
+            My Files
+          </button>
+          <button
+            className={`btn-nav${page === 'shared' ? ' btn-nav--active' : ''}`}
+            onClick={() => setPage('shared')}
+          >
+            Shared with Me
+          </button>
           {user.role === 'admin' && (
             <button className="btn-admin" onClick={() => setPage('admin')}>
               Admin Panel
@@ -75,7 +88,8 @@ function App() {
           </button>
         </div>
       </div>
-      <FileManager user={user} />
+      {page === 'dashboard' && <FileManager user={user} />}
+      {page === 'shared'    && <SharedWithMe />}
     </div>
   );
 }

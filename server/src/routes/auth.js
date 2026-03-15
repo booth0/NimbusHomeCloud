@@ -55,6 +55,20 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// GET /api/auth/users — returns all users except the caller (authenticated)
+router.get('/users', requireAuth, async (req, res) => {
+  try {
+    const users = await User.find(
+      { _id: { $ne: req.user.userId } },
+      { username: 1 }                   // only expose _id and username
+    ).sort({ username: 1 });
+    res.json({ users });
+  } catch (err) {
+    console.error('Users list error:', err);
+    res.status(500).json({ error: 'Server error fetching users' });
+  }
+});
+
 // GET /api/auth/me — requires valid JWT
 router.get('/me', requireAuth, async (req, res) => {
   try {
