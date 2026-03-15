@@ -3,7 +3,7 @@ import './App.css';
 import AuthForm from './components/AuthForm';
 import AdminPage from './components/AdminPage';
 import FileManager from './components/FileManager';
-import ShareDownload from './components/ShareDownload';
+import SharePreview from './components/SharePreview';
 
 const shareToken = window.location.pathname.startsWith('/share/')
   ? window.location.pathname.slice('/share/'.length)
@@ -40,7 +40,7 @@ function App() {
     setPage('dashboard');
   }
 
-  if (shareToken) return <ShareDownload token={shareToken} />;
+  if (shareToken) return <SharePreview token={shareToken} />;
 
   if (user === null) {
     return (
