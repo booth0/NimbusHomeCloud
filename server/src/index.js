@@ -17,7 +17,6 @@ app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/files', filesRouter);
 app.use('/api/share', shareRouter);
-// share generation endpoints stay under /api/files/:id/share (authenticated)
 
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello World!' });

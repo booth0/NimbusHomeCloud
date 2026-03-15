@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ShareModal from './ShareModal';
 
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -11,6 +12,7 @@ export default function FileManager({ user }) {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [sharingFile, setSharingFile] = useState(null);
 
   const token = () => localStorage.getItem('nimbus_token');
 
@@ -84,6 +86,7 @@ export default function FileManager({ user }) {
   }
 
   return (
+    <>
     <div className="file-manager">
       <div className="file-manager-toolbar">
         <label className="btn-upload">
@@ -112,6 +115,7 @@ export default function FileManager({ user }) {
                 <td className="file-date">{new Date(f.createdAt).toLocaleDateString()}</td>
                 <td className="file-actions">
                   <button onClick={() => handleDownload(f)} className="btn-file-action btn-download">Download</button>
+                  <button onClick={() => setSharingFile(f)} className="btn-file-action btn-share">Share</button>
                   <button onClick={() => handleDelete(f._id)} className="btn-file-action btn-delete">Delete</button>
                 </td>
               </tr>
@@ -120,5 +124,7 @@ export default function FileManager({ user }) {
         </table>
       )}
     </div>
+    {sharingFile && <ShareModal file={sharingFile} onClose={() => setSharingFile(null)} />}
+    </>
   );
 }

@@ -301,3 +301,109 @@ h1 {
 .btn-file-action:hover { opacity: 0.8; }
 .btn-download { background: #2d4a6e; color: #7eb8f7; }
 .btn-delete   { background: #4a1f2d; color: #f87171; }
+.btn-share    { background: #2d3d5c; color: #a3ccff; }
+
+/* ── Share Modal ─────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-card {
+  background: #1a1d27;
+  border-radius: 10px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header h2 { font-size: 1.2rem; color: #fff; margin-bottom: 0.2rem; }
+.modal-filename  { font-size: 0.85rem; color: #8b8fa8; word-break: break-all; }
+
+.modal-section { display: flex; flex-direction: column; gap: 0.5rem; }
+.modal-label   { font-size: 0.8rem; color: #8b8fa8; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.expiry-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.expiry-btn {
+  padding: 0.35rem 0.85rem;
+  border: 1px solid #2e3244;
+  border-radius: 6px;
+  background: transparent;
+  color: #a0a8b8;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+.expiry-btn:hover        { border-color: #7eb8f7; color: #7eb8f7; }
+.expiry-btn--active      { border-color: #7eb8f7; color: #7eb8f7; background: rgba(126, 184, 247, 0.1); }
+
+.share-link-row  { display: flex; gap: 0.5rem; }
+.share-link-input {
+  flex: 1;
+  background: #0f1117;
+  border: 1px solid #2e3244;
+  border-radius: 6px;
+  color: #e2e4ef;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.btn-copy {
+  padding: 0.45rem 0.9rem;
+  background: #2d4a6e;
+  color: #7eb8f7;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.btn-copy:hover { opacity: 0.8; }
+
+.share-list      { list-style: none; display: flex; flex-direction: column; gap: 0; }
+.share-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #2d3044;
+  font-size: 0.85rem;
+  color: #a0a8b8;
+}
+.share-list-item:last-child { border-bottom: none; }
+
+.btn-revoke {
+  padding: 0.2rem 0.6rem;
+  background: #4a1f2d;
+  color: #f87171;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: opacity 0.15s;
+}
+.btn-revoke:hover { opacity: 0.8; }
+
+.btn-modal-close {
+  align-self: flex-end;
+  background: transparent;
+  border: 1px solid #2e3244;
+  border-radius: 6px;
+  color: #a0a8b8;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.4rem 0.85rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-modal-close:hover { border-color: #7eb8f7; color: #7eb8f7; }

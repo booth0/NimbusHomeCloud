@@ -3,6 +3,11 @@ import './App.css';
 import AuthForm from './components/AuthForm';
 import AdminPage from './components/AdminPage';
 import FileManager from './components/FileManager';
+import ShareDownload from './components/ShareDownload';
+
+const shareToken = window.location.pathname.startsWith('/share/')
+  ? window.location.pathname.slice('/share/'.length)
+  : null;
 
 function App() {
   const [user, setUser] = useState(null); // null = loading, false = logged out, {...} = logged in
@@ -34,6 +39,8 @@ function App() {
     setUser(false);
     setPage('dashboard');
   }
+
+  if (shareToken) return <ShareDownload token={shareToken} />;
 
   if (user === null) {
     return (
