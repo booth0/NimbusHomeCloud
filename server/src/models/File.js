@@ -8,6 +8,7 @@ const fileSchema = new mongoose.Schema(
     size:         { type: Number, required: true },  // bytes
     mimetype:     { type: String, required: true },
     path:         { type: String, required: true },  // absolute path on disk
+    dateTaken:    { type: Date },
   },
   { timestamps: true }
 );

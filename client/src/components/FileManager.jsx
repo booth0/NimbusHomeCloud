@@ -1,18 +1,38 @@
 import { useState, useEffect } from 'react';
 import ShareModal from './ShareModal';
+import FileControls from './FileControls.jsx';
+import FileDetailView from './FileDetailView.jsx';
+import FileGridView from './FileGridView.jsx';
+import FilePreviewModal from './FilePreviewModal.jsx';
+import { filterFiles, sortFiles, getAvailableTypes } from '../utils/fileUtils.js';
 
-function formatSize(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
-  return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
+const DEFAULT_FILTER = { mode: 'media', selectedTypes: [] };
+const DEFAULT_SORT   = { by: 'date', direction: 'desc' };
+const DEFAULT_VIEW   = { mode: 'preview', size: 'medium' };
+
+function loadPref(key, fallback) {
+  try { return { ...fallback, ...JSON.parse(localStorage.getItem(key)) }; }
+  catch { return fallback; }
 }
 
 export default function FileManager({ user }) {
-  const [files, setFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [files, setFiles]           = useState([]);
+  const [uploading, setUploading]   = useState(false);
+  const [error, setError]           = useState('');
   const [sharingFile, setSharingFile] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const [filter, setFilter] = useState(() => loadPref('nimbus_filter', DEFAULT_FILTER));
+  const [sort, setSort]     = useState(() => loadPref('nimbus_sort',   DEFAULT_SORT));
+  const [view, setView]     = useState(() => loadPref('nimbus_view',   DEFAULT_VIEW));
+
+  function handleFilterChange(next) { setFilter(next); localStorage.setItem('nimbus_filter', JSON.stringify(next)); }
+  function handleSortChange(next)   { setSort(next);   localStorage.setItem('nimbus_sort',   JSON.stringify(next)); }
+  function handleViewChange(next)   { setView(next);   localStorage.setItem('nimbus_view',   JSON.stringify(next)); }
+
+  const availableTypes = getAvailableTypes(files);
+  const displayedFiles = sortFiles(filterFiles(files, filter), sort);
 
   const token = () => localStorage.getItem('nimbus_token');
 
@@ -30,28 +50,69 @@ export default function FileManager({ user }) {
 
   useEffect(() => { loadFiles(); }, []);
 
-  async function handleUpload(e) {
+  // Core upload logic — accepts a browser File object
+  async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('lastModified', file.lastModified);
+    const res = await fetch('/api/files/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token()}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    return data.file;
+  }
+
+  async function handleInputUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     setUploading(true);
     setError('');
-    const formData = new FormData();
-    formData.append('file', file);
     try {
-      const res = await fetch('/api/files/upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token()}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) return setError(data.error || 'Upload failed');
-      setFiles(prev => [data.file, ...prev]);
-    } catch {
-      setError('Upload failed');
+      const uploaded = await uploadFile(file);
+      setFiles(prev => [uploaded, ...prev]);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setUploading(false);
       e.target.value = '';
     }
+  }
+
+  // Drag-and-drop handlers
+  function handleDragOver(e) {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e) {
+    // Only clear if leaving the drop zone itself (not a child)
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  }
+
+  async function handleDrop(e) {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length === 0) return;
+    setUploading(true);
+    setError('');
+    const uploaded = [];
+    for (const file of droppedFiles) {
+      try {
+        const result = await uploadFile(file);
+        uploaded.push(result);
+      } catch (err) {
+        setError(`Failed to upload "${file.name}": ${err.message}`);
+        break;
+      }
+    }
+    if (uploaded.length > 0) setFiles(prev => [...uploaded, ...prev]);
+    setUploading(false);
   }
 
   async function handleDownload(file) {
@@ -87,44 +148,75 @@ export default function FileManager({ user }) {
 
   return (
     <>
-    <div className="file-manager">
-      <div className="file-manager-toolbar">
-        <label className="btn-upload">
-          {uploading ? 'Uploading…' : 'Upload File'}
-          <input type="file" onChange={handleUpload} disabled={uploading} hidden />
-        </label>
+      <div className="file-manager">
+
+        {/* Upload zone with drag-and-drop */}
+        <div
+          className={`file-upload-zone${isDragging ? ' file-upload-zone--dragging' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <label className="btn-upload">
+            {uploading ? 'Uploading…' : 'Upload File'}
+            <input type="file" onChange={handleInputUpload} disabled={uploading} hidden />
+          </label>
+          <span className="file-upload-hint">
+            {isDragging ? 'Drop to upload' : 'or drag & drop files here'}
+          </span>
+        </div>
+
+        {error && <p className="file-error">{error}</p>}
+
+        {/* Controls bar */}
+        {files.length > 0 && (
+          <FileControls
+            filter={filter}
+            sort={sort}
+            view={view}
+            availableTypes={availableTypes}
+            onFilterChange={handleFilterChange}
+            onSortChange={handleSortChange}
+            onViewChange={handleViewChange}
+          />
+        )}
+
+        {/* File list */}
+        {files.length === 0 ? (
+          <p className="file-empty">No files yet. Upload something!</p>
+        ) : view.mode === 'detail' ? (
+          <FileDetailView
+            files={displayedFiles}
+            onDownload={handleDownload}
+            onShare={setSharingFile}
+            onDelete={handleDelete}
+          />
+        ) : (
+          <FileGridView
+            files={displayedFiles}
+            filter={filter}
+            viewSize={view.size}
+            onDownload={handleDownload}
+            onShare={setSharingFile}
+            onDelete={handleDelete}
+            onFileClick={setSelectedFile}
+          />
+        )}
       </div>
-      {error && <p className="file-error">{error}</p>}
-      {files.length === 0 ? (
-        <p className="file-empty">No files yet. Upload something!</p>
-      ) : (
-        <table className="file-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Size</th>
-              <th>Uploaded</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {files.map(f => (
-              <tr key={f._id}>
-                <td className="file-name">{f.originalName}</td>
-                <td className="file-size">{formatSize(f.size)}</td>
-                <td className="file-date">{new Date(f.createdAt).toLocaleDateString()}</td>
-                <td className="file-actions">
-                  <button onClick={() => handleDownload(f)} className="btn-file-action btn-download">Download</button>
-                  <button onClick={() => setSharingFile(f)} className="btn-file-action btn-share">Share</button>
-                  <button onClick={() => handleDelete(f._id)} className="btn-file-action btn-delete">Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+
+      {sharingFile && (
+        <ShareModal file={sharingFile} onClose={() => setSharingFile(null)} />
       )}
-    </div>
-    {sharingFile && <ShareModal file={sharingFile} onClose={() => setSharingFile(null)} />}
+
+      {selectedFile && (
+        <FilePreviewModal
+          file={selectedFile}
+          onClose={() => setSelectedFile(null)}
+          onDownload={handleDownload}
+          onShare={f => { setSelectedFile(null); setSharingFile(f); }}
+          onDelete={handleDelete}
+        />
+      )}
     </>
   );
 }

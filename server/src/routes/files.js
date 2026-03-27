@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
+import exifr from 'exifr';
 import { File } from '../models/File.js';
 import { ShareLink } from '../models/ShareLink.js';
 import { UserShare } from '../models/UserShare.js';
@@ -37,6 +38,17 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file provided' });
     const { originalname, filename, size, mimetype, path: filePath } = req.file;
+
+    let dateTaken;
+    try {
+      const exif = await exifr.parse(filePath, { pick: ['DateTimeOriginal', 'CreateDate', 'DateTime'] });
+      dateTaken = exif?.DateTimeOriginal || exif?.CreateDate || exif?.DateTime;
+    } catch (_) {}
+    if (!dateTaken) {
+      const clientMtime = req.body.lastModified ? new Date(parseInt(req.body.lastModified)) : null;
+      dateTaken = (clientMtime && !isNaN(clientMtime)) ? clientMtime : (await fs.promises.stat(filePath)).mtime;
+    }
+
     const file = await File.create({
       filename,
       originalName: originalname,
@@ -44,6 +56,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
       size,
       mimetype,
       path: filePath,
+      dateTaken,
     });
     res.status(201).json({ file });
   } catch (err) {

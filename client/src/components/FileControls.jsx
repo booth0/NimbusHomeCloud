@@ -1,0 +1,174 @@
+import { useState, useRef, useEffect } from 'react';
+
+const FILTER_TABS = [
+  { label: 'Photos & Videos', mode: 'media' },
+  { label: 'Other Files',     mode: 'non-media' },
+  { label: 'All Files',       mode: 'all' },
+  { label: 'File Type',       mode: 'byType' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'date',     label: 'Date Taken' },
+  { value: 'uploaded', label: 'Upload Date' },
+  { value: 'name',     label: 'Name' },
+];
+
+function directionLabel(by, direction) {
+  if (by === 'name') return direction === 'asc' ? 'A → Z' : 'Z → A';
+  return direction === 'desc' ? 'Newest First' : 'Oldest First';
+}
+
+// Simple grid / list SVG icons
+function IconGrid() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <rect x="1" y="1" width="6" height="6" rx="1"/>
+      <rect x="9" y="1" width="6" height="6" rx="1"/>
+      <rect x="1" y="9" width="6" height="6" rx="1"/>
+      <rect x="9" y="9" width="6" height="6" rx="1"/>
+    </svg>
+  );
+}
+
+function IconList() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <rect x="1" y="2"  width="14" height="2.5" rx="1"/>
+      <rect x="1" y="6.75" width="14" height="2.5" rx="1"/>
+      <rect x="1" y="11.5" width="14" height="2.5" rx="1"/>
+    </svg>
+  );
+}
+
+export default function FileControls({ filter, sort, view, availableTypes, onFilterChange, onSortChange, onViewChange }) {
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!typeDropdownOpen) return;
+    function handler(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setTypeDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [typeDropdownOpen]);
+
+  function toggleType(ext) {
+    const selected = filter.selectedTypes.includes(ext)
+      ? filter.selectedTypes.filter(t => t !== ext)
+      : [...filter.selectedTypes, ext];
+    onFilterChange({ ...filter, selectedTypes: selected });
+  }
+
+  function handleFilterTab(mode) {
+    onFilterChange({ ...filter, mode });
+    if (mode !== 'byType') setTypeDropdownOpen(false);
+    else setTypeDropdownOpen(true);
+  }
+
+  return (
+    <div className="file-controls">
+      {/* Filter tabs */}
+      <div className="file-controls-section">
+        <div className="file-filter-tabs">
+          {FILTER_TABS.map(tab => (
+            <button
+              key={tab.mode}
+              className={`file-filter-tab${filter.mode === tab.mode ? ' file-filter-tab--active' : ''}`}
+              onClick={() => handleFilterTab(tab.mode)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {filter.mode === 'byType' && (
+          <div className="file-type-dropdown-wrap" ref={dropdownRef}>
+            <button
+              className="file-type-dropdown-trigger"
+              onClick={() => setTypeDropdownOpen(o => !o)}
+            >
+              {filter.selectedTypes.length === 0
+                ? 'All types'
+                : filter.selectedTypes.map(t => t.toUpperCase()).join(', ')}
+              <span className="file-type-caret">{typeDropdownOpen ? '▲' : '▼'}</span>
+            </button>
+            {typeDropdownOpen && (
+              <div className="file-type-dropdown">
+                {availableTypes.length === 0 && (
+                  <span className="file-type-empty">No file types yet</span>
+                )}
+                {availableTypes.map(ext => (
+                  <label key={ext} className="file-type-option">
+                    <input
+                      type="checkbox"
+                      checked={filter.selectedTypes.includes(ext)}
+                      onChange={() => toggleType(ext)}
+                    />
+                    <span>.{ext.toUpperCase()}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Sort */}
+      <div className="file-controls-section file-controls-section--right">
+        <select
+          className="file-sort-select"
+          value={sort.by}
+          onChange={e => onSortChange({ ...sort, by: e.target.value })}
+        >
+          {SORT_OPTIONS.map(o => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <button
+          className="file-sort-dir"
+          onClick={() => onSortChange({ ...sort, direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
+          title="Toggle sort direction"
+        >
+          {sort.direction === 'desc' ? '↓' : '↑'} {directionLabel(sort.by, sort.direction)}
+        </button>
+
+        {/* View mode */}
+        <div className="file-view-toggle">
+          <button
+            className={`file-view-btn${view.mode === 'detail' ? ' file-view-btn--active' : ''}`}
+            onClick={() => onViewChange({ ...view, mode: 'detail' })}
+            title="List view"
+          >
+            <IconList />
+          </button>
+          <button
+            className={`file-view-btn${view.mode === 'preview' ? ' file-view-btn--active' : ''}`}
+            onClick={() => onViewChange({ ...view, mode: 'preview' })}
+            title="Grid view"
+          >
+            <IconGrid />
+          </button>
+        </div>
+
+        {view.mode === 'preview' && (
+          <div className="file-size-toggle">
+            {['small', 'medium', 'large'].map((s, i) => (
+              <button
+                key={s}
+                className={`file-size-btn${view.size === s ? ' file-size-btn--active' : ''}`}
+                onClick={() => onViewChange({ ...view, size: s })}
+                title={s}
+              >
+                {['S', 'M', 'L'][i]}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
