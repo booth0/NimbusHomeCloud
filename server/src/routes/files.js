@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import exifr from 'exifr';
+import archiver from 'archiver';
 import { File } from '../models/File.js';
 import { ShareLink } from '../models/ShareLink.js';
 import { UserShare } from '../models/UserShare.js';
@@ -73,6 +74,32 @@ router.get('/', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('List error:', err);
     res.status(500).json({ error: 'Server error listing files' });
+  }
+});
+
+// POST /api/files/zip
+router.post('/zip', requireAuth, async (req, res) => {
+  try {
+    const { fileIds, archiveName } = req.body;
+    if (!Array.isArray(fileIds) || fileIds.length === 0)
+      return res.status(400).json({ error: 'fileIds must be a non-empty array' });
+
+    const safeName = (archiveName || 'archive').replace(/[^a-z0-9_\-. ]/gi, '_');
+    const files = await File.find({ _id: { $in: fileIds }, owner: req.user.userId });
+    if (files.length !== fileIds.length)
+      return res.status(403).json({ error: 'Access denied to one or more files' });
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.zip"`);
+
+    const archive = archiver('zip', { zlib: { level: 6 } });
+    archive.on('error', () => res.destroy());
+    archive.pipe(res);
+    for (const file of files) archive.file(file.path, { name: file.originalName });
+    await archive.finalize();
+  } catch (err) {
+    console.error('Zip error:', err);
+    if (!res.headersSent) res.status(500).json({ error: 'Server error creating zip' });
   }
 });
 

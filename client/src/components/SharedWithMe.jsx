@@ -3,6 +3,7 @@ import FileControls from './FileControls.jsx';
 import FileDetailView from './FileDetailView.jsx';
 import FileGridView from './FileGridView.jsx';
 import FilePreviewModal from './FilePreviewModal.jsx';
+import SelectionBar from './SelectionBar.jsx';
 import { filterFiles, sortFiles, getAvailableTypes } from '../utils/fileUtils.js';
 
 const BLOB_BASE = '/api/shared-with-me';
@@ -21,6 +22,9 @@ export default function SharedWithMe() {
   const [error, setError]           = useState('');
   const [copying, setCopying]       = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
+
+  const [selectMode,  setSelectMode]  = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const [filter, setFilter] = useState(() => loadPref('nimbus_filter_shared', DEFAULT_FILTER));
   const [sort, setSort]     = useState(() => loadPref('nimbus_sort_shared',   DEFAULT_SORT));
@@ -70,6 +74,29 @@ export default function SharedWithMe() {
     }
   }
 
+  function handleToggleSelectMode(on) {
+    setSelectMode(on);
+    if (!on) setSelectedIds(new Set());
+  }
+
+  function handleToggleSelect(fileId) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(fileId) ? next.delete(fileId) : next.add(fileId);
+      return next;
+    });
+  }
+
+  function handleClearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkCopy() {
+    const ids = [...selectedIds];
+    for (const id of ids) await handleCopy({ _id: id });
+    setSelectedIds(new Set());
+  }
+
   async function handleCopy(file) {
     setCopying(file._id);
     setError('');
@@ -103,6 +130,8 @@ export default function SharedWithMe() {
             onFilterChange={handleFilterChange}
             onSortChange={handleSortChange}
             onViewChange={handleViewChange}
+            selectMode={selectMode}
+            onSelectMode={handleToggleSelectMode}
           />
         </div>
       )}
@@ -114,6 +143,10 @@ export default function SharedWithMe() {
           files={displayedFiles}
           onDownload={handleDownload}
           onCopy={f => copying === f._id ? null : handleCopy(f)}
+          onFileClick={setSelectedFile}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
         />
       ) : (
         <FileGridView
@@ -124,6 +157,9 @@ export default function SharedWithMe() {
           onDownload={handleDownload}
           onCopy={f => copying === f._id ? null : handleCopy(f)}
           onFileClick={setSelectedFile}
+          selectMode={selectMode}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
         />
       )}
 
@@ -134,6 +170,14 @@ export default function SharedWithMe() {
           onClose={() => setSelectedFile(null)}
           onDownload={handleDownload}
           onCopy={f => { handleCopy(f); setSelectedFile(null); }}
+        />
+      )}
+
+      {selectMode && selectedIds.size > 0 && (
+        <SelectionBar
+          selectedCount={selectedIds.size}
+          onCopyToMyFiles={handleBulkCopy}
+          onClear={handleClearSelection}
         />
       )}
     </div>

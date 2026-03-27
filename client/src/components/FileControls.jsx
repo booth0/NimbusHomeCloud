@@ -39,7 +39,7 @@ function IconList() {
   );
 }
 
-export default function FileControls({ filter, sort, view, availableTypes, onFilterChange, onSortChange, onViewChange }) {
+export default function FileControls({ filter, sort, view, availableTypes, onFilterChange, onSortChange, onViewChange, selectMode, onSelectMode }) {
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -166,6 +166,15 @@ export default function FileControls({ filter, sort, view, availableTypes, onFil
               </button>
             ))}
           </div>
+        )}
+
+        {onSelectMode && (
+          <button
+            className={`file-filter-tab${selectMode ? ' file-filter-tab--active' : ''}`}
+            onClick={() => onSelectMode(!selectMode)}
+          >
+            {selectMode ? 'Cancel Select' : 'Select'}
+          </button>
         )}
       </div>
     </div>

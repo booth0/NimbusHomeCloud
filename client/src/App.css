@@ -1069,6 +1069,12 @@ h1 {
   font-size: 0.78rem;
 }
 
+.fpm-shared-users {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .fpm-detail-actions {
   display: flex;
   flex-wrap: wrap;
@@ -1083,3 +1089,109 @@ h1 {
   .fpm-preview { flex: 0 0 auto; max-height: 45vh; }
   .fpm-details { border-left: none; border-top: 1px solid #2e3244; }
 }
+
+/* ── Selection Bar ───────────────────────────────── */
+.selection-bar {
+  align-items: center;
+  background: #1a1d27;
+  border: 1px solid #2e3244;
+  border-radius: 10px;
+  bottom: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  gap: 0.75rem;
+  left: 50%;
+  padding: 0.6rem 1rem;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 150;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.selection-bar__count {
+  color: #7eb8f7;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.selection-bar__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.selection-bar__btn {
+  background: #2d3d5c;
+  border: none;
+  border-radius: 6px;
+  color: #a3ccff;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.selection-bar__btn:hover { opacity: 0.8; }
+
+.selection-bar__btn--danger {
+  background: #4a1f2d;
+  color: #f87171;
+}
+
+.selection-bar__btn--clear {
+  background: transparent;
+  border: 1px solid #2e3244;
+  color: #a0a8b8;
+}
+.selection-bar__btn--clear:hover { border-color: #7eb8f7; color: #7eb8f7; opacity: 1; }
+
+/* ── FileDetailView selection styles ────────────── */
+.fdt-checkbox-col {
+  width: 2rem;
+  padding: 0.5rem 0.5rem !important;
+}
+
+.fdt-row--selected td {
+  background: rgba(126, 184, 247, 0.1) !important;
+}
+
+.fdt-card--selected {
+  background: rgba(126, 184, 247, 0.08) !important;
+  border-color: rgba(126, 184, 247, 0.4) !important;
+}
+
+.fdt-card-checkbox {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── FilePreviewItem selection styles ───────────── */
+.fpi-select-checkbox {
+  background: rgba(15, 17, 23, 0.7);
+  border-radius: 4px;
+  left: 0.4rem;
+  padding: 0.2rem;
+  position: absolute;
+  top: 0.4rem;
+  z-index: 5;
+}
+
+.fpi-select-checkbox input[type="checkbox"] {
+  accent-color: #7eb8f7;
+  cursor: pointer;
+}
+
+.fpi-cell--selected .fpi-square {
+  outline: 2px solid #7eb8f7;
+  outline-offset: -2px;
+}
+
+.fpi-cell--selected .fpi-name {
+  color: #7eb8f7;
+}
+
+/* ── ZipNameModal ────────────────────────────────── */
+.zip-name-modal { max-width: 360px; }

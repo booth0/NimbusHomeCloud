@@ -7,8 +7,11 @@ const EXPIRY_OPTIONS = [
   { label: '30 Days',  value: '30d' },
 ];
 
-export default function ShareModal({ file, onClose }) {
-  const [tab, setTab] = useState('link'); // 'link' | 'users'
+export default function ShareModal({ file, files, onClose }) {
+  const fileList = files ?? (file ? [file] : []);
+  const isMulti  = fileList.length > 1;
+
+  const [tab, setTab] = useState(isMulti ? 'users' : 'link'); // 'link' | 'users'
 
   // ── Link tab state ──────────────────────────────
   const [expiresIn, setExpiresIn]         = useState('24h');
@@ -27,8 +30,11 @@ export default function ShareModal({ file, onClose }) {
 
   const token = () => localStorage.getItem('nimbus_token');
 
+  // Use the first file for single-file operations
+  const primaryFile = fileList[0];
+
   useEffect(() => {
-    loadShares();
+    if (!isMulti) loadShares();
     loadUsers();
   }, []);
 
@@ -36,7 +42,7 @@ export default function ShareModal({ file, onClose }) {
 
   async function loadShares() {
     try {
-      const res = await fetch(`/api/files/${file._id}/shares`, {
+      const res = await fetch(`/api/files/${primaryFile._id}/shares`, {
         headers: { Authorization: `Bearer ${token()}` },
       });
       const data = await res.json();
@@ -49,7 +55,7 @@ export default function ShareModal({ file, onClose }) {
     setLinkError('');
     setGeneratedLink(null);
     try {
-      const res = await fetch(`/api/files/${file._id}/share`, {
+      const res = await fetch(`/api/files/${primaryFile._id}/share`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ expiresIn }),
@@ -77,7 +83,7 @@ export default function ShareModal({ file, onClose }) {
 
   async function handleRevoke(linkId) {
     try {
-      const res = await fetch(`/api/files/${file._id}/shares/${linkId}`, {
+      const res = await fetch(`/api/files/${primaryFile._id}/shares/${linkId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token()}` },
       });
@@ -93,14 +99,20 @@ export default function ShareModal({ file, onClose }) {
 
   async function loadUsers() {
     try {
-      const [usersRes, sharedRes] = await Promise.all([
-        fetch('/api/auth/users', { headers: { Authorization: `Bearer ${token()}` } }),
-        fetch(`/api/files/${file._id}/shared-with`, { headers: { Authorization: `Bearer ${token()}` } }),
-      ]);
-      const usersData  = await usersRes.json();
-      const sharedData = await sharedRes.json();
-      if (usersRes.ok)  setAllUsers(usersData.users);
-      if (sharedRes.ok) setSharedWith(sharedData.sharedWith.map(u => u._id));
+      if (isMulti) {
+        const usersRes = await fetch('/api/auth/users', { headers: { Authorization: `Bearer ${token()}` } });
+        const usersData = await usersRes.json();
+        if (usersRes.ok) setAllUsers(usersData.users);
+      } else {
+        const [usersRes, sharedRes] = await Promise.all([
+          fetch('/api/auth/users', { headers: { Authorization: `Bearer ${token()}` } }),
+          fetch(`/api/files/${primaryFile._id}/shared-with`, { headers: { Authorization: `Bearer ${token()}` } }),
+        ]);
+        const usersData  = await usersRes.json();
+        const sharedData = await sharedRes.json();
+        if (usersRes.ok)  setAllUsers(usersData.users);
+        if (sharedRes.ok) setSharedWith(sharedData.sharedWith.map(u => u._id));
+      }
     } catch { /* non-fatal */ }
   }
 
@@ -117,13 +129,15 @@ export default function ShareModal({ file, onClose }) {
     setUsersLoading(true);
     setUsersError('');
     try {
-      const res = await fetch(`/api/files/${file._id}/share-with`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: [...selected] }),
-      });
-      const data = await res.json();
-      if (!res.ok) return setUsersError(data.error || 'Failed to share');
+      for (const f of fileList) {
+        const res = await fetch(`/api/files/${f._id}/share-with`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userIds: [...selected] }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setUsersError(data.error || 'Failed to share'); return; }
+      }
       setSharedWith(prev => [...new Set([...prev, ...selected])]);
       setSelected(new Set());
     } catch {
@@ -135,7 +149,7 @@ export default function ShareModal({ file, onClose }) {
 
   async function handleRevokeUser(userId) {
     try {
-      const res = await fetch(`/api/files/${file._id}/shared-with/${userId}`, {
+      const res = await fetch(`/api/files/${primaryFile._id}/shared-with/${userId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token()}` },
       });
@@ -152,24 +166,26 @@ export default function ShareModal({ file, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Share File</h2>
-          <p className="modal-filename">{file.originalName}</p>
+          <h2>Share {isMulti ? `${fileList.length} Files` : 'File'}</h2>
+          <p className="modal-filename">{isMulti ? `${fileList.length} files selected` : primaryFile.originalName}</p>
         </div>
 
-        <div className="modal-tabs">
-          <button
-            className={`modal-tab${tab === 'link' ? ' modal-tab--active' : ''}`}
-            onClick={() => setTab('link')}
-          >
-            Link
-          </button>
-          <button
-            className={`modal-tab${tab === 'users' ? ' modal-tab--active' : ''}`}
-            onClick={() => setTab('users')}
-          >
-            Users
-          </button>
-        </div>
+        {!isMulti && (
+          <div className="modal-tabs">
+            <button
+              className={`modal-tab${tab === 'link' ? ' modal-tab--active' : ''}`}
+              onClick={() => setTab('link')}
+            >
+              Link
+            </button>
+            <button
+              className={`modal-tab${tab === 'users' ? ' modal-tab--active' : ''}`}
+              onClick={() => setTab('users')}
+            >
+              Users
+            </button>
+          </div>
+        )}
 
         {tab === 'link' && (
           <>

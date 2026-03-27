@@ -70,7 +70,7 @@ async function capturePdfThumbnail(blobUrl) {
   }
 }
 
-export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onFileClick }) {
+export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onFileClick, selectMode, isSelected, onToggleSelect }) {
   const [isVisible, setIsVisible]   = useState(false);
   const [videoThumb, setVideoThumb] = useState(null);
   const [pdfThumb, setPdfThumb]     = useState(null);
@@ -107,9 +107,19 @@ export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDo
   return (
     <div
       ref={cellRef}
-      className={`fpi-cell${isGalleryMode ? ' fpi-cell--gallery' : ' fpi-cell--mixed'}`}
+      className={`fpi-cell${isGalleryMode ? ' fpi-cell--gallery' : ' fpi-cell--mixed'}${isSelected ? ' fpi-cell--selected' : ''}`}
     >
-      <div className="fpi-square" onClick={() => onFileClick(file)}>
+      <div className="fpi-square" onClick={() => selectMode ? onToggleSelect?.(file) : onFileClick(file)}>
+        {selectMode && (
+          <div className="fpi-select-checkbox">
+            <input
+              type="checkbox"
+              checked={isSelected ?? false}
+              onChange={() => onToggleSelect?.(file)}
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+        )}
 
         {/* Preview content */}
         {!isVisible || (needsBlob && loading) ? (

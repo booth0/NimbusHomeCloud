@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import ShareModal from './ShareModal';
+import SelectionBar from './SelectionBar.jsx';
+import ZipNameModal from './ZipNameModal.jsx';
 import FileControls from './FileControls.jsx';
 import FileDetailView from './FileDetailView.jsx';
 import FileGridView from './FileGridView.jsx';
@@ -22,6 +24,11 @@ export default function FileManager({ user }) {
   const [sharingFile, setSharingFile] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  const [selectMode,   setSelectMode]   = useState(false);
+  const [selectedIds,  setSelectedIds]  = useState(new Set());
+  const [zipModalOpen, setZipModalOpen] = useState(false);
+  const [sharingFiles, setSharingFiles] = useState(null);
 
   const [filter, setFilter] = useState(() => loadPref('nimbus_filter', DEFAULT_FILTER));
   const [sort, setSort]     = useState(() => loadPref('nimbus_sort',   DEFAULT_SORT));
@@ -146,6 +153,50 @@ export default function FileManager({ user }) {
     }
   }
 
+  function handleToggleSelectMode(on) {
+    setSelectMode(on);
+    if (!on) setSelectedIds(new Set());
+  }
+
+  function handleToggleSelect(fileId) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(fileId) ? next.delete(fileId) : next.add(fileId);
+      return next;
+    });
+  }
+
+  function handleClearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds];
+    for (const id of ids) await handleDelete(id);
+    setSelectedIds(new Set());
+  }
+
+  async function handleBulkDownloadZip(archiveName) {
+    setZipModalOpen(false);
+    try {
+      const res = await fetch('/api/files/zip', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileIds: [...selectedIds], archiveName }),
+      });
+      if (!res.ok) return setError('ZIP download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${archiveName}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('ZIP download failed');
+    }
+  }
+
   return (
     <>
       <div className="file-manager">
@@ -179,6 +230,8 @@ export default function FileManager({ user }) {
               onFilterChange={handleFilterChange}
               onSortChange={handleSortChange}
               onViewChange={handleViewChange}
+              selectMode={selectMode}
+              onSelectMode={handleToggleSelectMode}
             />
           </div>
         )}
@@ -192,6 +245,10 @@ export default function FileManager({ user }) {
             onDownload={handleDownload}
             onShare={setSharingFile}
             onDelete={handleDelete}
+            onFileClick={setSelectedFile}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
           />
         ) : (
           <FileGridView
@@ -202,12 +259,19 @@ export default function FileManager({ user }) {
             onShare={setSharingFile}
             onDelete={handleDelete}
             onFileClick={setSelectedFile}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
           />
         )}
       </div>
 
       {sharingFile && (
         <ShareModal file={sharingFile} onClose={() => setSharingFile(null)} />
+      )}
+
+      {sharingFiles && (
+        <ShareModal files={sharingFiles} onClose={() => setSharingFiles(null)} />
       )}
 
       {selectedFile && (
@@ -217,6 +281,24 @@ export default function FileManager({ user }) {
           onDownload={handleDownload}
           onShare={f => { setSelectedFile(null); setSharingFile(f); }}
           onDelete={handleDelete}
+        />
+      )}
+
+      {selectMode && selectedIds.size > 0 && (
+        <SelectionBar
+          selectedCount={selectedIds.size}
+          onDownloadZip={() => setZipModalOpen(true)}
+          onShare={() => setSharingFiles(displayedFiles.filter(f => selectedIds.has(f._id)))}
+          onDelete={handleBulkDelete}
+          onClear={handleClearSelection}
+        />
+      )}
+
+      {zipModalOpen && (
+        <ZipNameModal
+          defaultName="nimbus-files"
+          onConfirm={handleBulkDownloadZip}
+          onClose={() => setZipModalOpen(false)}
         />
       )}
     </>

@@ -65,6 +65,7 @@ function PreviewContent({ file, blobUrl, loading }) {
 export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete, onCopy, blobBaseUrl }) {
   const token = localStorage.getItem('nimbus_token');
   const { blobUrl, loading } = useFileBlob(file._id, token, blobBaseUrl);
+  const [sharedUsers, setSharedUsers] = useState([]);
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -78,6 +79,17 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  // Fetch shared-with list (owner only)
+  useEffect(() => {
+    if (!onShare) return;
+    fetch(`/api/files/${file._id}/shared-with`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.sharedWith) setSharedUsers(data.sharedWith); })
+      .catch(() => {});
+  }, [file._id]);
 
   const uploadedDate  = new Date(file.createdAt).toLocaleString();
   const takenDate     = file.dateTaken ? new Date(file.dateTaken).toLocaleString() : null;
@@ -119,6 +131,15 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
             {file._sharedBy && <>
               <span className="fpm-detail-label">Shared By</span>
               <span className="fpm-detail-value">{file._sharedBy}</span>
+            </>}
+
+            {sharedUsers.length > 0 && <>
+              <span className="fpm-detail-label">Shared With</span>
+              <div className="fpm-shared-users">
+                {sharedUsers.map(u => (
+                  <span key={u._id} className="fpm-detail-value">{u.username}</span>
+                ))}
+              </div>
             </>}
           </div>
 
