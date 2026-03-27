@@ -45,7 +45,7 @@ function PreviewContent({ file, blobUrl, loading }) {
     );
 
   if (mimetype === 'application/pdf')
-    return <iframe src={blobUrl} title={file.originalName} className="fpm-preview-iframe" />;
+    return <iframe src={`${blobUrl}#navpanes=0`} title={file.originalName} className="fpm-preview-iframe" />;
 
   if (mimetype.startsWith('text/'))
     return (
@@ -62,9 +62,9 @@ function PreviewContent({ file, blobUrl, loading }) {
   );
 }
 
-export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete }) {
+export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete, onCopy, blobBaseUrl }) {
   const token = localStorage.getItem('nimbus_token');
-  const { blobUrl, loading } = useFileBlob(file._id, token);
+  const { blobUrl, loading } = useFileBlob(file._id, token, blobBaseUrl);
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -115,12 +115,18 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
               <span className="fpm-detail-label">{takenLabel}</span>
               <span className="fpm-detail-value">{takenDate}</span>
             </>}
+
+            {file._sharedBy && <>
+              <span className="fpm-detail-label">Shared By</span>
+              <span className="fpm-detail-value">{file._sharedBy}</span>
+            </>}
           </div>
 
           <div className="fpm-detail-actions">
             <button className="btn-file-action btn-download" onClick={() => onDownload(file)}>Download</button>
-            <button className="btn-file-action btn-share"    onClick={() => onShare(file)}>Share</button>
-            <button className="btn-file-action btn-delete"   onClick={() => { onDelete(file._id); onClose(); }}>Delete</button>
+            {onShare  && <button className="btn-file-action btn-share"  onClick={() => onShare(file)}>Share</button>}
+            {onCopy   && <button className="btn-file-action btn-share"  onClick={() => onCopy(file)}>Copy to My Files</button>}
+            {onDelete && <button className="btn-file-action btn-delete" onClick={() => { onDelete(file._id); onClose(); }}>Delete</button>}
           </div>
         </div>
       </div>

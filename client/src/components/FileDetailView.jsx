@@ -24,7 +24,7 @@ function FileDate({ file }) {
   );
 }
 
-export default function FileDetailView({ files, onDownload, onShare, onDelete }) {
+export default function FileDetailView({ files, onDownload, onShare, onDelete, onCopy }) {
   if (files.length === 0) {
     return <p className="file-empty">No files match the current filter.</p>;
   }
@@ -39,6 +39,7 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete })
             <th>Type</th>
             <th>Size</th>
             <th>Date</th>
+            {files[0]?._sharedBy !== undefined && <th>Shared By</th>}
             <th>Actions</th>
           </tr>
         </thead>
@@ -49,10 +50,12 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete })
               <td className="fdt-type">{getExtension(f).toUpperCase()}</td>
               <td className="fdt-size">{formatSize(f.size)}</td>
               <td className="fdt-date"><FileDate file={f} /></td>
+              {f._sharedBy !== undefined && <td className="fdt-type">{f._sharedBy}</td>}
               <td className="fdt-actions">
                 <button className="btn-file-action btn-download" onClick={() => onDownload(f)}>Download</button>
-                <button className="btn-file-action btn-share"    onClick={() => onShare(f)}>Share</button>
-                <button className="btn-file-action btn-delete"   onClick={() => onDelete(f._id)}>Delete</button>
+                {onShare  && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
+                {onCopy   && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
+                {onDelete && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
               </td>
             </tr>
           ))}
@@ -68,11 +71,13 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete })
               <span>{getExtension(f).toUpperCase()}</span>
               <span>{formatSize(f.size)}</span>
               <span><FileDate file={f} /></span>
+              {f._sharedBy !== undefined && <span>Shared By: {f._sharedBy}</span>}
             </div>
             <div className="fdt-card-actions">
               <button className="btn-file-action btn-download" onClick={() => onDownload(f)}>Download</button>
-              <button className="btn-file-action btn-share"    onClick={() => onShare(f)}>Share</button>
-              <button className="btn-file-action btn-delete"   onClick={() => onDelete(f._id)}>Delete</button>
+              {onShare  && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
+              {onCopy   && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
+              {onDelete && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
             </div>
           </div>
         ))}

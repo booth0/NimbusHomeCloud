@@ -4,7 +4,6 @@ const FILTER_TABS = [
   { label: 'Photos & Videos', mode: 'media' },
   { label: 'Other Files',     mode: 'non-media' },
   { label: 'All Files',       mode: 'all' },
-  { label: 'File Type',       mode: 'byType' },
 ];
 
 const SORT_OPTIONS = [
@@ -64,9 +63,9 @@ export default function FileControls({ filter, sort, view, availableTypes, onFil
   }
 
   function handleFilterTab(mode) {
-    onFilterChange({ ...filter, mode });
-    if (mode !== 'byType') setTypeDropdownOpen(false);
-    else setTypeDropdownOpen(true);
+    // Clear selected types when leaving 'all' — they only apply there
+    onFilterChange({ mode, selectedTypes: mode === 'all' ? filter.selectedTypes : [] });
+    if (mode !== 'all') setTypeDropdownOpen(false);
   }
 
   return (
@@ -85,7 +84,7 @@ export default function FileControls({ filter, sort, view, availableTypes, onFil
           ))}
         </div>
 
-        {filter.mode === 'byType' && (
+        {filter.mode === 'all' && (
           <div className="file-type-dropdown-wrap" ref={dropdownRef}>
             <button
               className="file-type-dropdown-trigger"

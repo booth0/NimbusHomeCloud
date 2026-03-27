@@ -33,11 +33,10 @@ export function getAvailableTypes(files) {
 export function filterFiles(files, filter) {
   if (filter.mode === 'media') return files.filter(isMedia);
   if (filter.mode === 'non-media') return files.filter(f => !isMedia(f));
-  if (filter.mode === 'byType') {
-    if (filter.selectedTypes.length === 0) return files;
+  // 'all' or legacy 'byType' — apply selectedTypes if any are chosen
+  if (filter.selectedTypes.length > 0)
     return files.filter(f => filter.selectedTypes.includes(getExtension(f)));
-  }
-  return files; // 'all'
+  return files;
 }
 
 export function sortFiles(files, sort) {

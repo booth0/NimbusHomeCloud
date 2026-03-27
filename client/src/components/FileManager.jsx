@@ -170,15 +170,17 @@ export default function FileManager({ user }) {
 
         {/* Controls bar */}
         {files.length > 0 && (
-          <FileControls
-            filter={filter}
-            sort={sort}
-            view={view}
-            availableTypes={availableTypes}
-            onFilterChange={handleFilterChange}
-            onSortChange={handleSortChange}
-            onViewChange={handleViewChange}
-          />
+          <div className="file-controls-sticky">
+            <FileControls
+              filter={filter}
+              sort={sort}
+              view={view}
+              availableTypes={availableTypes}
+              onFilterChange={handleFilterChange}
+              onSortChange={handleSortChange}
+              onViewChange={handleViewChange}
+            />
+          </div>
         )}
 
         {/* File list */}

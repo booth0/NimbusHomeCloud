@@ -10,8 +10,19 @@ const isPdf = file => file.mimetype === 'application/pdf';
 
 function FileIcon({ mimetype }) {
   if (mimetype.startsWith('audio/'))    return <span className="fpi-icon">🎵</span>;
-  if (mimetype === 'application/pdf')   return <span className="fpi-icon fpi-icon--text">PDF</span>;
-  if (mimetype.startsWith('text/'))     return <span className="fpi-icon fpi-icon--text">TXT</span>;
+  if (mimetype === 'application/pdf')
+    return <span className="fpi-icon"><span className="fpi-badge fpi-badge--pdf">PDF</span></span>;
+  if (mimetype.startsWith('text/'))
+    return <span className="fpi-icon"><span className="fpi-badge">TXT</span></span>;
+  if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      mimetype === 'application/msword')
+    return <span className="fpi-icon"><span className="fpi-badge fpi-badge--doc">DOC</span></span>;
+  if (mimetype === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+      mimetype === 'application/vnd.ms-powerpoint')
+    return <span className="fpi-icon"><span className="fpi-badge fpi-badge--ppt">PPT</span></span>;
+  if (mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      mimetype === 'application/vnd.ms-excel')
+    return <span className="fpi-icon"><span className="fpi-badge fpi-badge--xls">XLS</span></span>;
   return <span className="fpi-icon">📄</span>;
 }
 
@@ -59,16 +70,15 @@ async function capturePdfThumbnail(blobUrl) {
   }
 }
 
-export default function FilePreviewItem({ file, isGalleryMode, onDownload, onShare, onDelete, onFileClick }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [hovered, setHovered]     = useState(false);
+export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onFileClick }) {
+  const [isVisible, setIsVisible]   = useState(false);
   const [videoThumb, setVideoThumb] = useState(null);
   const [pdfThumb, setPdfThumb]     = useState(null);
   const cellRef = useRef(null);
 
   const token = localStorage.getItem('nimbus_token');
   const needsBlob = isImage(file) || isVideo(file) || isPdf(file);
-  const { blobUrl, loading } = useFileBlob(isVisible && needsBlob ? file._id : null, token);
+  const { blobUrl, loading } = useFileBlob(isVisible && needsBlob ? file._id : null, token, blobBaseUrl);
 
   // Lazy-load: only fetch once cell enters viewport
   useEffect(() => {
@@ -98,8 +108,6 @@ export default function FilePreviewItem({ file, isGalleryMode, onDownload, onSha
     <div
       ref={cellRef}
       className={`fpi-cell${isGalleryMode ? ' fpi-cell--gallery' : ' fpi-cell--mixed'}`}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <div className="fpi-square" onClick={() => onFileClick(file)}>
 
@@ -131,24 +139,30 @@ export default function FilePreviewItem({ file, isGalleryMode, onDownload, onSha
         )}
 
         {/* Hover overlay — click propagates to square to open modal */}
-        <div className={`fpi-overlay${hovered ? ' fpi-overlay--visible' : ''}`}>
+        <div className="fpi-overlay">
           <span className="fpi-overlay-name">{file.originalName}</span>
+          {file._sharedBy && <span className="fpi-overlay-sharedby">Shared By: {file._sharedBy}</span>}
           <div className="fpi-overlay-actions">
             <button
               className="fpi-action-btn"
               title="Download"
               onClick={e => { e.stopPropagation(); onDownload(file); }}
             >⬇</button>
-            <button
+            {onShare && <button
               className="fpi-action-btn"
               title="Share"
               onClick={e => { e.stopPropagation(); onShare(file); }}
-            >🔗</button>
-            <button
+            >🔗</button>}
+            {onCopy && <button
+              className="fpi-action-btn"
+              title="Copy to My Files"
+              onClick={e => { e.stopPropagation(); onCopy(file); }}
+            >📋</button>}
+            {onDelete && <button
               className="fpi-action-btn fpi-action-btn--delete"
               title="Delete"
               onClick={e => { e.stopPropagation(); onDelete(file._id); }}
-            >🗑</button>
+            >🗑</button>}
           </div>
         </div>
       </div>

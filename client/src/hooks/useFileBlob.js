@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 // Module-level cache — persists across renders, cleared only on page reload
 const cache = new Map();
 
-export default function useFileBlob(fileId, token) {
+export default function useFileBlob(fileId, token, baseUrl = '/api/files') {
   const [blobUrl, setBlobUrl] = useState(() => cache.get(fileId) || null);
   const [loading, setLoading] = useState(!cache.has(fileId));
   const [error, setError]     = useState(null);
@@ -20,7 +20,7 @@ export default function useFileBlob(fileId, token) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/files/${fileId}/download`, {
+    fetch(`${baseUrl}/${fileId}/download`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => {
