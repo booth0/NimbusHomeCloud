@@ -3,6 +3,7 @@ import https from 'https';
 import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { connectDB } from './db/db.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
@@ -13,6 +14,7 @@ import sharedRouter from './routes/shared.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_ORIGIN || 'https://localhost:5173',
   credentials: true,

@@ -39,7 +39,8 @@ const router = Router();
 router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file provided' });
-    const { originalname, filename, size, mimetype, path: filePath } = req.file;
+    const { filename, size, mimetype, path: filePath } = req.file;
+    const originalname = path.basename(req.file.originalname.replace(/\\/g, '/')) || 'file';
 
     let dateTaken;
     try {
