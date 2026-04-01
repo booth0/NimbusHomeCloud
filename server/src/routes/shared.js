@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { UserShare } from '../models/UserShare.js';
 import { File } from '../models/File.js';
 import { requireAuth } from '../middleware/auth.js';
+import { decryptBuffer } from '../utils/encryption.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOADS_BASE = path.resolve(__dirname, '../../uploads');
@@ -55,9 +56,14 @@ router.get('/:fileId/download', requireAuth, async (req, res) => {
     const file = await File.findById(req.params.fileId);
     if (!file) return res.status(404).json({ error: 'File not found' });
 
+    const raw = await fs.promises.readFile(file.path);
+    const output = file.encrypted
+      ? decryptBuffer({ encrypted: raw, iv: file.iv, authTag: file.authTag })
+      : raw;
     res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
     res.setHeader('Content-Type', file.mimetype);
-    res.sendFile(file.path);
+    res.setHeader('Content-Length', output.length);
+    res.send(output);
   } catch (err) {
     console.error('Shared download error:', err);
     res.status(500).json({ error: 'Server error downloading shared file' });
@@ -92,6 +98,9 @@ router.post('/:fileId/copy', requireAuth, async (req, res) => {
       size: original.size,
       mimetype: original.mimetype,
       path: newPath,
+      encrypted: original.encrypted,
+      iv: original.iv,
+      authTag: original.authTag,
     });
 
     res.status(201).json({ file: copy });
