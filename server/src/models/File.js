@@ -9,6 +9,9 @@ const fileSchema = new mongoose.Schema(
     mimetype:     { type: String, required: true },
     path:         { type: String, required: true },  // absolute path on disk
     dateTaken:    { type: Date },
+    encrypted:    { type: Boolean, default: false },
+    iv:           { type: String },
+    authTag:      { type: String },
   },
   { timestamps: true }
 );

@@ -11,6 +11,7 @@ import { File } from '../models/File.js';
 import { ShareLink } from '../models/ShareLink.js';
 import { UserShare } from '../models/UserShare.js';
 import { requireAuth } from '../middleware/auth.js';
+import { encryptBuffer, decryptBuffer } from '../utils/encryption.js';
 
 const ALLOWED_EXPIRY = { '1h': 1, '24h': 24, '7d': 168, '30d': 720 }; // values unused, just for validation
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
@@ -38,7 +39,8 @@ const router = Router();
 router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file provided' });
-    const { originalname, filename, size, mimetype, path: filePath } = req.file;
+    const { filename, size, mimetype, path: filePath } = req.file;
+    const originalname = path.basename(req.file.originalname.replace(/\\/g, '/')) || 'file';
 
     let dateTaken;
     try {
@@ -50,6 +52,10 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
       dateTaken = (clientMtime && !isNaN(clientMtime)) ? clientMtime : (await fs.promises.stat(filePath)).mtime;
     }
 
+    const plaintext = await fs.promises.readFile(filePath);
+    const { encrypted: ciphertext, iv, authTag } = encryptBuffer(plaintext);
+    await fs.promises.writeFile(filePath, ciphertext);
+
     const file = await File.create({
       filename,
       originalName: originalname,
@@ -58,6 +64,9 @@ router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
       mimetype,
       path: filePath,
       dateTaken,
+      encrypted: true,
+      iv,
+      authTag,
     });
     res.status(201).json({ file });
   } catch (err) {
@@ -95,7 +104,15 @@ router.post('/zip', requireAuth, async (req, res) => {
     const archive = archiver('zip', { zlib: { level: 6 } });
     archive.on('error', () => res.destroy());
     archive.pipe(res);
-    for (const file of files) archive.file(file.path, { name: file.originalName });
+    for (const file of files) {
+      if (file.encrypted) {
+        const raw = await fs.promises.readFile(file.path);
+        const decrypted = decryptBuffer({ encrypted: raw, iv: file.iv, authTag: file.authTag });
+        archive.append(decrypted, { name: file.originalName });
+      } else {
+        archive.file(file.path, { name: file.originalName });
+      }
+    }
     await archive.finalize();
   } catch (err) {
     console.error('Zip error:', err);
@@ -111,9 +128,14 @@ router.get('/:id/download', requireAuth, async (req, res) => {
     if (file.owner.toString() !== req.user.userId)
       return res.status(403).json({ error: 'Access denied' });
 
+    const raw = await fs.promises.readFile(file.path);
+    const output = file.encrypted
+      ? decryptBuffer({ encrypted: raw, iv: file.iv, authTag: file.authTag })
+      : raw;
     res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
     res.setHeader('Content-Type', file.mimetype);
-    res.sendFile(file.path);
+    res.setHeader('Content-Length', output.length);
+    res.send(output);
   } catch (err) {
     console.error('Download error:', err);
     res.status(500).json({ error: 'Server error during download' });

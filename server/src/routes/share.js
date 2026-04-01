@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import { ShareLink } from '../models/ShareLink.js';
 import { File } from '../models/File.js';
+import { decryptBuffer } from '../utils/encryption.js';
 
 const router = Router();
 
@@ -52,12 +54,17 @@ router.get('/:token', async (req, res) => {
     const file = await File.findById(payload.fileId);
     if (!file) return res.status(404).json({ error: 'File not found' });
 
-    // 4. Stream file to client
+    // 4. Decrypt and send file
     const previewable = /^(image|video|audio)\/.+$|^application\/pdf$|^text\/.+$/.test(file.mimetype);
     const disposition = previewable ? 'inline' : 'attachment';
+    const raw = await fs.promises.readFile(file.path);
+    const output = file.encrypted
+      ? decryptBuffer({ encrypted: raw, iv: file.iv, authTag: file.authTag })
+      : raw;
     res.setHeader('Content-Disposition', `${disposition}; filename="${file.originalName}"`);
     res.setHeader('Content-Type', file.mimetype);
-    res.sendFile(file.path);
+    res.setHeader('Content-Length', output.length);
+    res.send(output);
   } catch (err) {
     console.error('Share access error:', err);
     res.status(500).json({ error: 'Server error accessing shared file' });
