@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import https from 'https';
+import fs from 'fs';
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from './db/db.js';
@@ -11,7 +13,10 @@ import sharedRouter from './routes/shared.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_ORIGIN || 'https://localhost:5173',
+  credentials: true,
+}));
 app.use(express.json());
 
 app.use('/api/auth', authRouter);
@@ -24,8 +29,13 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello World!' });
 });
 
+const sslOptions = {
+  key:  fs.readFileSync(process.env.SSL_KEY_PATH  || './certs/key.pem'),
+  cert: fs.readFileSync(process.env.SSL_CERT_PATH || './certs/cert.pem'),
+};
+
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  https.createServer(sslOptions, app).listen(PORT, () => {
+    console.log(`Server running on https://localhost:${PORT}`);
   });
 });

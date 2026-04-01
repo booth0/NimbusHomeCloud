@@ -52,7 +52,11 @@ function App() {
   }
 
   if (user === false) {
-    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
+    return (
+      <div className="auth-page">
+        <AuthForm onAuthSuccess={handleAuthSuccess} />
+      </div>
+    );
   }
 
   if (page === 'admin') {

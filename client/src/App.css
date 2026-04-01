@@ -37,6 +37,14 @@ h1 {
   color: #7eb8f7;
 }
 
+.auth-page {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
 /* Auth styles */
 .auth-card {
   background: #1a1d27;
