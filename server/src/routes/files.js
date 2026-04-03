@@ -37,39 +37,45 @@ const upload = multer({ storage, limits: { fileSize: 1024 * 1024 * 1024 } }); //
 const router = Router();
 
 // POST /api/files/upload
-router.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
+router.post('/upload', requireAuth, upload.array('files', 50), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No file provided' });
-    const { filename, size, mimetype, path: filePath } = req.file;
-    const originalname = path.basename(req.file.originalname.replace(/\\/g, '/')) || 'file';
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ error: 'No files provided' });
 
-    let dateTaken;
-    try {
-      const exif = await exifr.parse(filePath, { pick: ['DateTimeOriginal', 'CreateDate', 'DateTime'] });
-      dateTaken = exif?.DateTimeOriginal || exif?.CreateDate || exif?.DateTime;
-    } catch (_) {}
-    if (!dateTaken) {
-      const clientMtime = req.body.lastModified ? new Date(parseInt(req.body.lastModified)) : null;
-      dateTaken = (clientMtime && !isNaN(clientMtime)) ? clientMtime : (await fs.promises.stat(filePath)).mtime;
+    const uploadedFiles = [];
+    for (const reqFile of req.files) {
+      const { filename, size, mimetype, path: filePath } = reqFile;
+      const originalname = path.basename(reqFile.originalname.replace(/\\/g, '/')) || 'file';
+
+      let dateTaken;
+      try {
+        const exif = await exifr.parse(filePath, { pick: ['DateTimeOriginal', 'CreateDate', 'DateTime'] });
+        dateTaken = exif?.DateTimeOriginal || exif?.CreateDate || exif?.DateTime;
+      } catch (_) {}
+      if (!dateTaken) {
+        const clientMtime = req.body.lastModified ? new Date(parseInt(req.body.lastModified)) : null;
+        dateTaken = (clientMtime && !isNaN(clientMtime)) ? clientMtime : (await fs.promises.stat(filePath)).mtime;
+      }
+
+      const plaintext = await fs.promises.readFile(filePath);
+      const { encrypted: ciphertext, iv, authTag } = encryptBuffer(plaintext);
+      await fs.promises.writeFile(filePath, ciphertext);
+
+      const file = await File.create({
+        filename,
+        originalName: originalname,
+        owner: req.user.userId,
+        size,
+        mimetype,
+        path: filePath,
+        dateTaken,
+        encrypted: true,
+        iv,
+        authTag,
+      });
+      uploadedFiles.push(file);
     }
-
-    const plaintext = await fs.promises.readFile(filePath);
-    const { encrypted: ciphertext, iv, authTag } = encryptBuffer(plaintext);
-    await fs.promises.writeFile(filePath, ciphertext);
-
-    const file = await File.create({
-      filename,
-      originalName: originalname,
-      owner: req.user.userId,
-      size,
-      mimetype,
-      path: filePath,
-      dateTaken,
-      encrypted: true,
-      iv,
-      authTag,
-    });
-    res.status(201).json({ file });
+    res.status(201).json({ files: uploadedFiles });
   } catch (err) {
     console.error('Upload error:', err);
     res.status(500).json({ error: 'Server error during upload' });

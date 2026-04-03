@@ -332,6 +332,18 @@ h1 {
 }
 .btn-upload:hover { opacity: 0.85; }
 
+.btn-upload--folder {
+  background: #23273a;
+  border: 1px solid #3a3f55;
+  color: #a0a8c0;
+}
+
+.btn-upload--folder:hover {
+  background: #2e3347;
+  color: #e0e0e0;
+  opacity: 1;
+}
+
 .file-error { color: #f87171; font-size: 0.875rem; margin-bottom: 0.75rem; }
 .file-empty { color: #8b8fa8; font-size: 0.9rem; }
 
@@ -1222,6 +1234,30 @@ h1 {
 
 .fpi-cell--selected .fpi-name {
   color: #7eb8f7;
+}
+
+/* ── SharedWithMe section headings ──────────────── */
+.swm-section-heading {
+  border-top: 1px solid #2e3244;
+  color: #8b8fa8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-top: 1rem;
+  padding: 1rem 2rem 0.25rem;
+  text-transform: uppercase;
+}
+
+.swm-section-heading:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+
+/* Collections view toggle inside Shared with Me */
+.swm-col-controls {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.4rem 2rem 0.25rem;
 }
 
 /* ── CollectionShareModal role dropdown ─────────── */

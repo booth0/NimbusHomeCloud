@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ShareModal from './ShareModal';
 import SelectionBar from './SelectionBar.jsx';
 import ZipNameModal from './ZipNameModal.jsx';
@@ -7,6 +7,7 @@ import FileDetailView from './FileDetailView.jsx';
 import FileGridView from './FileGridView.jsx';
 import FilePreviewModal from './FilePreviewModal.jsx';
 import AddToCollectionModal from './AddToCollectionModal.jsx';
+import FolderCollectionModal from './FolderCollectionModal.jsx';
 import { filterFiles, sortFiles, getAvailableTypes } from '../utils/fileUtils.js';
 
 const DEFAULT_FILTER = { mode: 'media', selectedTypes: [] };
@@ -18,13 +19,34 @@ function loadPref(key, fallback) {
   catch { return fallback; }
 }
 
+// Recursively collects all File objects from a FileSystemEntry (directory or file).
+async function readAllFilesFromEntry(entry) {
+  const files = [];
+  async function traverse(e) {
+    if (e.isFile) {
+      const f = await new Promise((res, rej) => e.file(res, rej));
+      files.push(f);
+    } else if (e.isDirectory) {
+      const reader = e.createReader();
+      let batch;
+      do {
+        batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+        for (const child of batch) await traverse(child);
+      } while (batch.length > 0);
+    }
+  }
+  await traverse(entry);
+  return files;
+}
+
 export default function FileManager({ user }) {
   const [files, setFiles]           = useState([]);
-  const [uploading, setUploading]   = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null); // null | { current, total }
   const [error, setError]           = useState('');
   const [sharingFile, setSharingFile] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [folderUploadPending, setFolderUploadPending] = useState(null); // { files, folderName }
 
   const [selectMode,   setSelectMode]   = useState(false);
   const [selectedIds,  setSelectedIds]  = useState(new Set());
@@ -36,14 +58,20 @@ export default function FileManager({ user }) {
   const [sort, setSort]     = useState(() => loadPref('nimbus_sort',   DEFAULT_SORT));
   const [view, setView]     = useState(() => loadPref('nimbus_view',   DEFAULT_VIEW));
 
+  const folderInputRef = useRef(null);
+
   function handleFilterChange(next) { setFilter(next); localStorage.setItem('nimbus_filter', JSON.stringify(next)); }
   function handleSortChange(next)   { setSort(next);   localStorage.setItem('nimbus_sort',   JSON.stringify(next)); }
   function handleViewChange(next)   { setView(next);   localStorage.setItem('nimbus_view',   JSON.stringify(next)); }
 
   const availableTypes = getAvailableTypes(files);
   const displayedFiles = sortFiles(filterFiles(files, filter), sort);
-
   const token = () => localStorage.getItem('nimbus_token');
+
+  // Set webkitdirectory on the folder input (not a standard React prop)
+  useEffect(() => {
+    if (folderInputRef.current) folderInputRef.current.webkitdirectory = true;
+  }, []);
 
   async function loadFiles() {
     try {
@@ -59,10 +87,10 @@ export default function FileManager({ user }) {
 
   useEffect(() => { loadFiles(); }, []);
 
-  // Core upload logic — accepts a browser File object
-  async function uploadFile(file) {
+  // Uploads a single browser File object; returns the server file document.
+  async function uploadSingle(file) {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
     formData.append('lastModified', file.lastModified);
     const res = await fetch('/api/files/upload', {
       method: 'POST',
@@ -71,58 +99,118 @@ export default function FileManager({ user }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Upload failed');
-    return data.file;
+    return data.files[0];
   }
 
-  async function handleInputUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploading(true);
+  // Uploads an array of File objects sequentially with progress tracking.
+  // Returns the array of successfully uploaded file documents.
+  async function uploadFileList(fileArray) {
     setError('');
-    try {
-      const uploaded = await uploadFile(file);
-      setFiles(prev => [uploaded, ...prev]);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploading(false);
-      e.target.value = '';
+    setUploadProgress({ current: 1, total: fileArray.length });
+    const uploaded = [];
+    for (let i = 0; i < fileArray.length; i++) {
+      setUploadProgress({ current: i + 1, total: fileArray.length });
+      try {
+        const result = await uploadSingle(fileArray[i]);
+        uploaded.push(result);
+      } catch (err) {
+        setError(`Failed to upload "${fileArray[i].name}": ${err.message}`);
+        break;
+      }
+    }
+    setUploadProgress(null);
+    if (uploaded.length > 0) setFiles(prev => [...uploaded, ...prev]);
+    return uploaded;
+  }
+
+  // ── Upload handlers ──────────────────────────────
+
+  async function handleInputUpload(e) {
+    const fileArray = Array.from(e.target.files);
+    e.target.value = '';
+    if (fileArray.length === 0) return;
+    await uploadFileList(fileArray);
+  }
+
+  async function handleFolderInputChange(e) {
+    const fileArray = Array.from(e.target.files);
+    e.target.value = '';
+    if (fileArray.length === 0) return;
+    // Derive folder name from the first file's path (webkitRelativePath = "FolderName/...")
+    const folderName = fileArray[0].webkitRelativePath?.split('/')?.[0] || 'Folder';
+    setFolderUploadPending({ files: fileArray, folderName });
+  }
+
+  async function handleFolderDecision(createCollection, collectionName) {
+    const { files: fileArray } = folderUploadPending;
+    setFolderUploadPending(null);
+    const uploaded = await uploadFileList(fileArray);
+    if (createCollection && uploaded.length > 0) {
+      try {
+        const colRes = await fetch('/api/collections', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: collectionName }),
+        });
+        const colData = await colRes.json();
+        if (!colRes.ok) return setError(colData.error || 'Files uploaded but failed to create collection');
+        const addRes = await fetch(`/api/collections/${colData.collection._id}/files`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileIds: uploaded.map(f => f._id) }),
+        });
+        if (!addRes.ok) setError('Files uploaded but failed to add to collection');
+      } catch {
+        setError('Files uploaded but failed to create collection');
+      }
     }
   }
 
-  // Drag-and-drop handlers
+  // ── Drag-and-drop handlers ───────────────────────
+
   function handleDragOver(e) {
     e.preventDefault();
     setIsDragging(true);
   }
 
   function handleDragLeave(e) {
-    // Only clear if leaving the drop zone itself (not a child)
-    if (!e.currentTarget.contains(e.relatedTarget)) {
-      setIsDragging(false);
-    }
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
   }
 
   async function handleDrop(e) {
     e.preventDefault();
     setIsDragging(false);
+
+    // Capture entries synchronously before the DataTransfer object is recycled
+    const items = Array.from(e.dataTransfer.items);
+    const entries = items.map(item => item.webkitGetAsEntry?.()).filter(Boolean);
+    const hasDir = entries.some(entry => entry.isDirectory);
+
+    if (hasDir) {
+      const allFiles = [];
+      let folderName = '';
+      for (const entry of entries) {
+        if (entry.isDirectory) {
+          if (!folderName) folderName = entry.name;
+          const dirFiles = await readAllFilesFromEntry(entry);
+          allFiles.push(...dirFiles);
+        } else {
+          const file = await new Promise((res, rej) => entry.file(res, rej));
+          allFiles.push(file);
+        }
+      }
+      if (allFiles.length > 0) {
+        setFolderUploadPending({ files: allFiles, folderName: folderName || 'Folder' });
+      }
+      return;
+    }
+
     const droppedFiles = Array.from(e.dataTransfer.files);
     if (droppedFiles.length === 0) return;
-    setUploading(true);
-    setError('');
-    const uploaded = [];
-    for (const file of droppedFiles) {
-      try {
-        const result = await uploadFile(file);
-        uploaded.push(result);
-      } catch (err) {
-        setError(`Failed to upload "${file.name}": ${err.message}`);
-        break;
-      }
-    }
-    if (uploaded.length > 0) setFiles(prev => [...uploaded, ...prev]);
-    setUploading(false);
+    await uploadFileList(droppedFiles);
   }
+
+  // ── File action handlers ─────────────────────────
 
   async function handleDownload(file) {
     try {
@@ -133,13 +221,9 @@ export default function FileManager({ user }) {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = file.originalName;
-      a.click();
+      a.href = url; a.download = file.originalName; a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      setError('Download failed');
-    }
+    } catch { setError('Download failed'); }
   }
 
   async function handleDelete(id) {
@@ -150,9 +234,7 @@ export default function FileManager({ user }) {
       });
       if (!res.ok) return setError('Delete failed');
       setFiles(prev => prev.filter(f => f._id !== id));
-    } catch {
-      setError('Delete failed');
-    }
+    } catch { setError('Delete failed'); }
   }
 
   function handleToggleSelectMode(on) {
@@ -168,9 +250,7 @@ export default function FileManager({ user }) {
     });
   }
 
-  function handleClearSelection() {
-    setSelectedIds(new Set());
-  }
+  function handleClearSelection() { setSelectedIds(new Set()); }
 
   async function handleBulkDelete() {
     const ids = [...selectedIds];
@@ -190,20 +270,21 @@ export default function FileManager({ user }) {
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `${archiveName}.zip`;
-      a.click();
+      a.href = url; a.download = `${archiveName}.zip`; a.click();
       URL.revokeObjectURL(url);
-    } catch {
-      setError('ZIP download failed');
-    }
+    } catch { setError('ZIP download failed'); }
   }
+
+  const isUploading = uploadProgress !== null;
+  const uploadLabel = isUploading
+    ? (uploadProgress.total > 1 ? `Uploading ${uploadProgress.current} of ${uploadProgress.total}…` : 'Uploading…')
+    : 'Upload Files';
 
   return (
     <>
       <div className="file-manager">
 
-        {/* Upload zone with drag-and-drop */}
+        {/* Upload zone */}
         <div
           className={`file-upload-zone${isDragging ? ' file-upload-zone--dragging' : ''}`}
           onDragOver={handleDragOver}
@@ -211,11 +292,15 @@ export default function FileManager({ user }) {
           onDrop={handleDrop}
         >
           <label className="btn-upload">
-            {uploading ? 'Uploading…' : 'Upload File'}
-            <input type="file" onChange={handleInputUpload} disabled={uploading} hidden />
+            {uploadLabel}
+            <input type="file" multiple onChange={handleInputUpload} disabled={isUploading} hidden />
+          </label>
+          <label className="btn-upload btn-upload--folder">
+            Upload Folder
+            <input ref={folderInputRef} type="file" multiple onChange={handleFolderInputChange} disabled={isUploading} hidden />
           </label>
           <span className="file-upload-hint">
-            {isDragging ? 'Drop to upload' : 'or drag & drop files here'}
+            {isDragging ? 'Drop to upload' : 'or drag & drop files or folders'}
           </span>
         </div>
 
@@ -293,6 +378,16 @@ export default function FileManager({ user }) {
         <AddToCollectionModal
           file={addToCollectionFile}
           onClose={() => setAddToCollectionFile(null)}
+        />
+      )}
+
+      {folderUploadPending && (
+        <FolderCollectionModal
+          folderName={folderUploadPending.folderName}
+          fileCount={folderUploadPending.files.length}
+          onCreateCollection={name => handleFolderDecision(true, name)}
+          onJustUpload={() => handleFolderDecision(false)}
+          onClose={() => setFolderUploadPending(null)}
         />
       )}
 
