@@ -10,6 +10,7 @@ import archiver from 'archiver';
 import { File } from '../models/File.js';
 import { ShareLink } from '../models/ShareLink.js';
 import { UserShare } from '../models/UserShare.js';
+import { Collection } from '../models/Collection.js';
 import { requireAuth } from '../middleware/auth.js';
 import { encryptBuffer, decryptBuffer } from '../utils/encryption.js';
 
@@ -299,6 +300,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       file.deleteOne(),
       ShareLink.deleteMany({ fileId: file._id }),
       UserShare.deleteMany({ fileId: file._id }),
+      Collection.updateMany({ files: file._id }, { $pull: { files: file._id } }),
     ]);
     res.json({ message: 'File deleted' });
   } catch (err) {

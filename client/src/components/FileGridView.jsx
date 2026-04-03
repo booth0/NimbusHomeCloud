@@ -3,7 +3,7 @@ import { isMedia } from '../utils/fileUtils.js';
 
 const SIZE_PX = { small: 120, medium: 200, large: 300 };
 
-export default function FileGridView({ files, filter, viewSize, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onFileClick, selectMode, selectedIds, onToggleSelect }) {
+export default function FileGridView({ files, filter, viewSize, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, selectedIds, onToggleSelect }) {
   if (files.length === 0) {
     return <p className="file-empty">No files match the current filter.</p>;
   }
@@ -33,6 +33,7 @@ export default function FileGridView({ files, filter, viewSize, blobBaseUrl, onD
           onShare={onShare}
           onDelete={onDelete}
           onCopy={onCopy}
+          onAddToCollection={onAddToCollection}
           onFileClick={onFileClick}
           selectMode={selectMode}
           isSelected={selectedIds?.has(f._id) ?? false}

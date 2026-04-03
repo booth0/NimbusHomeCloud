@@ -165,6 +165,7 @@ export default function ShareModal({ file, files, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <button className="fpm-close" onClick={onClose} title="Close">✕</button>
         <div className="modal-header">
           <h2>Share {isMulti ? `${fileList.length} Files` : 'File'}</h2>
           <p className="modal-filename">{isMulti ? `${fileList.length} files selected` : primaryFile.originalName}</p>
@@ -286,7 +287,6 @@ export default function ShareModal({ file, files, onClose }) {
           </>
         )}
 
-        <button className="btn-modal-close" onClick={onClose}>Close</button>
       </div>
     </div>
   );

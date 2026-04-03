@@ -62,7 +62,7 @@ function PreviewContent({ file, blobUrl, loading }) {
   );
 }
 
-export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete, onCopy, blobBaseUrl }) {
+export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete, onCopy, onAddToCollection, blobBaseUrl }) {
   const token = localStorage.getItem('nimbus_token');
   const { blobUrl, loading } = useFileBlob(file._id, token, blobBaseUrl);
   const [sharedUsers, setSharedUsers] = useState([]);
@@ -145,9 +145,10 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
 
           <div className="fpm-detail-actions">
             <button className="btn-file-action btn-download" onClick={() => onDownload(file)}>Download</button>
-            {onShare  && <button className="btn-file-action btn-share"  onClick={() => onShare(file)}>Share</button>}
-            {onCopy   && <button className="btn-file-action btn-share"  onClick={() => onCopy(file)}>Copy to My Files</button>}
-            {onDelete && <button className="btn-file-action btn-delete" onClick={() => { onDelete(file._id); onClose(); }}>Delete</button>}
+            {onShare           && <button className="btn-file-action btn-share"  onClick={() => onShare(file)}>Share</button>}
+            {onCopy            && <button className="btn-file-action btn-share"  onClick={() => onCopy(file)}>Copy to My Files</button>}
+            {onAddToCollection && <button className="btn-file-action btn-share"  onClick={() => onAddToCollection(file)}>+ Collection</button>}
+            {onDelete          && <button className="btn-file-action btn-delete" onClick={() => { onDelete(file._id); onClose(); }}>Delete</button>}
           </div>
         </div>
       </div>

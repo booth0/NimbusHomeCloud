@@ -24,7 +24,7 @@ function FileDate({ file }) {
   );
 }
 
-export default function FileDetailView({ files, onDownload, onShare, onDelete, onCopy, onFileClick, selectMode, selectedIds, onToggleSelect }) {
+export default function FileDetailView({ files, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, selectedIds, onToggleSelect }) {
   if (files.length === 0) {
     return <p className="file-empty">No files match the current filter.</p>;
   }
@@ -69,9 +69,10 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete, o
               {!selectMode && (
                 <td className="fdt-actions">
                   <button className="btn-file-action btn-download" onClick={() => onDownload(f)}>Download</button>
-                  {onShare  && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
-                  {onCopy   && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
-                  {onDelete && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
+                  {onShare           && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
+                  {onCopy            && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
+                  {onAddToCollection && <button className="btn-file-action btn-share"  onClick={() => onAddToCollection(f)}>+ Collection</button>}
+                  {onDelete          && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
                 </td>
               )}
             </tr>
@@ -108,9 +109,10 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete, o
             {!selectMode && (
               <div className="fdt-card-actions">
                 <button className="btn-file-action btn-download" onClick={() => onDownload(f)}>Download</button>
-                {onShare  && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
-                {onCopy   && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
-                {onDelete && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
+                {onShare           && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
+                {onCopy            && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
+                {onAddToCollection && <button className="btn-file-action btn-share"  onClick={() => onAddToCollection(f)}>+ Collection</button>}
+                {onDelete          && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
               </div>
             )}
           </div>

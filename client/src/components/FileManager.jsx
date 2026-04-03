@@ -6,6 +6,7 @@ import FileControls from './FileControls.jsx';
 import FileDetailView from './FileDetailView.jsx';
 import FileGridView from './FileGridView.jsx';
 import FilePreviewModal from './FilePreviewModal.jsx';
+import AddToCollectionModal from './AddToCollectionModal.jsx';
 import { filterFiles, sortFiles, getAvailableTypes } from '../utils/fileUtils.js';
 
 const DEFAULT_FILTER = { mode: 'media', selectedTypes: [] };
@@ -29,6 +30,7 @@ export default function FileManager({ user }) {
   const [selectedIds,  setSelectedIds]  = useState(new Set());
   const [zipModalOpen, setZipModalOpen] = useState(false);
   const [sharingFiles, setSharingFiles] = useState(null);
+  const [addToCollectionFile, setAddToCollectionFile] = useState(null);
 
   const [filter, setFilter] = useState(() => loadPref('nimbus_filter', DEFAULT_FILTER));
   const [sort, setSort]     = useState(() => loadPref('nimbus_sort',   DEFAULT_SORT));
@@ -245,6 +247,7 @@ export default function FileManager({ user }) {
             onDownload={handleDownload}
             onShare={setSharingFile}
             onDelete={handleDelete}
+            onAddToCollection={setAddToCollectionFile}
             onFileClick={setSelectedFile}
             selectMode={selectMode}
             selectedIds={selectedIds}
@@ -258,6 +261,7 @@ export default function FileManager({ user }) {
             onDownload={handleDownload}
             onShare={setSharingFile}
             onDelete={handleDelete}
+            onAddToCollection={setAddToCollectionFile}
             onFileClick={setSelectedFile}
             selectMode={selectMode}
             selectedIds={selectedIds}
@@ -281,6 +285,14 @@ export default function FileManager({ user }) {
           onDownload={handleDownload}
           onShare={f => { setSelectedFile(null); setSharingFile(f); }}
           onDelete={handleDelete}
+          onAddToCollection={f => { setSelectedFile(null); setAddToCollectionFile(f); }}
+        />
+      )}
+
+      {addToCollectionFile && (
+        <AddToCollectionModal
+          file={addToCollectionFile}
+          onClose={() => setAddToCollectionFile(null)}
         />
       )}
 

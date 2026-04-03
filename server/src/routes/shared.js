@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { UserShare } from '../models/UserShare.js';
 import { File } from '../models/File.js';
+import { Collection } from '../models/Collection.js';
 import { requireAuth } from '../middleware/auth.js';
 import { decryptBuffer } from '../utils/encryption.js';
 
@@ -41,6 +42,30 @@ router.get('/', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Shared-with-me list error:', err);
     res.status(500).json({ error: 'Server error fetching shared files' });
+  }
+});
+
+// GET /api/shared-with-me/collections
+router.get('/collections', requireAuth, async (req, res) => {
+  try {
+    const collections = await Collection.find({ 'members.user': req.user.userId })
+      .populate('owner', 'username')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      collections: collections.map(c => ({
+        _id: c._id,
+        name: c.name,
+        owner: c.owner,
+        fileCount: c.files.length,
+        fileIds: c.files.map(id => id.toString()),
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      })),
+    });
+  } catch (err) {
+    console.error('Shared collections error:', err);
+    res.status(500).json({ error: 'Server error fetching shared collections' });
   }
 });
 

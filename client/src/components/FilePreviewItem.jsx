@@ -70,7 +70,7 @@ async function capturePdfThumbnail(blobUrl) {
   }
 }
 
-export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onFileClick, selectMode, isSelected, onToggleSelect }) {
+export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, isSelected, onToggleSelect }) {
   const [isVisible, setIsVisible]   = useState(false);
   const [videoThumb, setVideoThumb] = useState(null);
   const [pdfThumb, setPdfThumb]     = useState(null);
@@ -150,6 +150,13 @@ export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDo
 
         {/* Hover overlay — click propagates to square to open modal */}
         <div className="fpi-overlay">
+          {onAddToCollection && (
+            <button
+              className="fpi-add-btn"
+              title="Add to Collection"
+              onClick={e => { e.stopPropagation(); onAddToCollection(file); }}
+            >+</button>
+          )}
           <span className="fpi-overlay-name">{file.originalName}</span>
           {file._sharedBy && <span className="fpi-overlay-sharedby">Shared By: {file._sharedBy}</span>}
           <div className="fpi-overlay-actions">
