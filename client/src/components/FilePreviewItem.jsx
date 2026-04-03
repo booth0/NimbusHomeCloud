@@ -70,7 +70,7 @@ async function capturePdfThumbnail(blobUrl) {
   }
 }
 
-export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, isSelected, onToggleSelect }) {
+export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, isSelected, onToggleSelect, deleteLabel = 'Delete' }) {
   const [isVisible, setIsVisible]   = useState(false);
   const [videoThumb, setVideoThumb] = useState(null);
   const [pdfThumb, setPdfThumb]     = useState(null);
@@ -177,7 +177,7 @@ export default function FilePreviewItem({ file, isGalleryMode, blobBaseUrl, onDo
             >📋</button>}
             {onDelete && <button
               className="fpi-action-btn fpi-action-btn--delete"
-              title="Delete"
+              title={deleteLabel}
               onClick={e => { e.stopPropagation(); onDelete(file._id); }}
             >🗑</button>}
           </div>

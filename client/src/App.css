@@ -1226,3 +1226,149 @@ h1 {
 
 /* ── ZipNameModal ────────────────────────────────── */
 .zip-name-modal { max-width: 360px; }
+
+/* ── Collections: page header ────────────────────── */
+.col-page-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem 0.5rem;
+}
+
+/* ── Collections: list grid ──────────────────────── */
+.col-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  padding: 1rem 2rem 2rem;
+}
+
+.col-cell {
+  background: #1a1d27;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.col-cell:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+/* 2×2 thumbnail mosaic */
+.col-thumb {
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  overflow: hidden;
+}
+
+.col-thumb-quadrant {
+  background: #0f1117;
+  overflow: hidden;
+}
+
+.col-thumb-img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.col-title {
+  color: #e0e0e0;
+  font-size: 0.85rem;
+  overflow: hidden;
+  padding: 0.45rem 0.6rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hover overlay with action buttons */
+.col-overlay {
+  align-items: flex-end;
+  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+  bottom: 0;
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  left: 0;
+  opacity: 0;
+  padding: 0.5rem;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity 0.15s;
+}
+
+.col-cell:hover .col-overlay {
+  opacity: 1;
+}
+
+/* ── Collections: detail/open view ──────────────── */
+.col-view-sticky {
+  background: #0f1117;
+  position: sticky;
+  top: calc(4.1rem + 1px);
+  z-index: 10;
+}
+
+.col-view-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 2rem 0.5rem;
+}
+
+.col-back-btn {
+  background: none;
+  border: 1px solid #3a3f55;
+  border-radius: 6px;
+  color: #a0a8c0;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.3rem 0.6rem;
+  transition: background 0.15s, color 0.15s;
+}
+
+.col-back-btn:hover {
+  background: #1a1d27;
+  color: #e0e0e0;
+}
+
+.col-view-meta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.col-view-title {
+  color: #e0e0e0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-view-owner {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.col-view-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+}
+
+.col-controls-bar {
+  border-top: 1px solid #1e2235;
+}

@@ -62,7 +62,7 @@ function PreviewContent({ file, blobUrl, loading }) {
   );
 }
 
-export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete, onCopy, onAddToCollection, blobBaseUrl }) {
+export default function FilePreviewModal({ file, onClose, onDownload, onShare, onDelete, onCopy, onAddToCollection, blobBaseUrl, deleteLabel = 'Delete' }) {
   const token = localStorage.getItem('nimbus_token');
   const { blobUrl, loading } = useFileBlob(file._id, token, blobBaseUrl);
   const [sharedUsers, setSharedUsers] = useState([]);
@@ -148,7 +148,7 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
             {onShare           && <button className="btn-file-action btn-share"  onClick={() => onShare(file)}>Share</button>}
             {onCopy            && <button className="btn-file-action btn-share"  onClick={() => onCopy(file)}>Copy to My Files</button>}
             {onAddToCollection && <button className="btn-file-action btn-share"  onClick={() => onAddToCollection(file)}>+ Collection</button>}
-            {onDelete          && <button className="btn-file-action btn-delete" onClick={() => { onDelete(file._id); onClose(); }}>Delete</button>}
+            {onDelete          && <button className="btn-file-action btn-delete" onClick={() => { onDelete(file._id); onClose(); }}>{deleteLabel}</button>}
           </div>
         </div>
       </div>

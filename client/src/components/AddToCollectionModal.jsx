@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 
-export default function AddToCollectionModal({ file, onClose }) {
+// ── Mode A: add a single file to one of the user's collections ──────────────
+
+function ModeAddFile({ file, onClose }) {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState('');
@@ -67,7 +69,6 @@ export default function AddToCollectionModal({ file, onClose }) {
       if (!createRes.ok) return setError(createData.error || 'Failed to create collection');
 
       const newCol = createData.collection;
-
       const addRes = await fetch(`/api/collections/${newCol._id}/files`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
@@ -136,7 +137,10 @@ export default function AddToCollectionModal({ file, onClose }) {
               placeholder="Collection name"
               value={newName}
               onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') { setCreating(false); setNewName(''); } }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleCreate();
+                if (e.key === 'Escape') { setCreating(false); setNewName(''); }
+              }}
               autoFocus
             />
             <button className="btn-copy" onClick={handleCreate} disabled={!newName.trim()}>
@@ -154,4 +158,118 @@ export default function AddToCollectionModal({ file, onClose }) {
       </div>
     </div>
   );
+}
+
+// ── Mode B: pick files from My Files to add to a collection ─────────────────
+
+function ModePickFiles({ collection, onClose, onAdded }) {
+  const [files, setFiles]     = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+  const [selected, setSelected] = useState(new Set());
+  const [adding, setAdding]   = useState(false);
+
+  const token = () => localStorage.getItem('nimbus_token');
+  const alreadyIn = new Set((collection.files ?? []).map(f => f._id));
+
+  useEffect(() => {
+    fetch('/api/files', { headers: { Authorization: `Bearer ${token()}` } })
+      .then(r => r.json())
+      .then(data => { if (data.files) setFiles(data.files); })
+      .catch(() => setError('Failed to load files'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function toggle(fileId) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(fileId) ? next.delete(fileId) : next.add(fileId);
+      return next;
+    });
+  }
+
+  async function handleAdd() {
+    if (selected.size === 0) return;
+    setAdding(true); setError('');
+    try {
+      const res = await fetch(`/api/collections/${collection._id}/files`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileIds: [...selected] }),
+      });
+      const data = await res.json();
+      if (!res.ok) return setError(data.error || 'Failed to add files');
+      onAdded();
+    } catch {
+      setError('Failed to add files');
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <button className="fpm-close" onClick={onClose} title="Close">✕</button>
+        <div className="modal-header">
+          <h2>Add Files</h2>
+          <p className="modal-filename">{collection.name}</p>
+        </div>
+
+        {loading ? (
+          <p className="file-empty">Loading…</p>
+        ) : files.length === 0 ? (
+          <p className="file-empty">No files in your library.</p>
+        ) : (
+          <div style={{ maxHeight: '45vh', overflowY: 'auto' }}>
+            <ul className="share-list">
+              {files.map(f => {
+                const inCol = alreadyIn.has(f._id);
+                return (
+                  <li key={f._id} className="share-list-item">
+                    {inCol ? (
+                      <>
+                        <span className="share-user-name">{f.originalName}</span>
+                        <span className="share-user-badge">Already added</span>
+                      </>
+                    ) : (
+                      <label className="share-user-label" style={{ width: '100%', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(f._id)}
+                          onChange={() => toggle(f._id)}
+                        />
+                        <span className="share-user-name">{f.originalName}</span>
+                      </label>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {error && <p className="file-error">{error}</p>}
+
+        <button
+          className="btn-primary"
+          onClick={handleAdd}
+          disabled={adding || selected.size === 0}
+        >
+          {adding
+            ? 'Adding…'
+            : `Add ${selected.size > 0 ? selected.size + ' ' : ''}File${selected.size === 1 ? '' : 's'}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Export ───────────────────────────────────────────────────────────────────
+
+export default function AddToCollectionModal({ file, mode = 'addFile', collection, onClose, onAdded }) {
+  if (mode === 'pickFiles') {
+    return <ModePickFiles collection={collection} onClose={onClose} onAdded={onAdded} />;
+  }
+  return <ModeAddFile file={file} onClose={onClose} />;
 }

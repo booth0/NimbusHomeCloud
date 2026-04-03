@@ -24,7 +24,7 @@ function FileDate({ file }) {
   );
 }
 
-export default function FileDetailView({ files, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, selectedIds, onToggleSelect }) {
+export default function FileDetailView({ files, onDownload, onShare, onDelete, onCopy, onAddToCollection, onFileClick, selectMode, selectedIds, onToggleSelect, deleteLabel = 'Delete' }) {
   if (files.length === 0) {
     return <p className="file-empty">No files match the current filter.</p>;
   }
@@ -72,7 +72,7 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete, o
                   {onShare           && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
                   {onCopy            && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
                   {onAddToCollection && <button className="btn-file-action btn-share"  onClick={() => onAddToCollection(f)}>+ Collection</button>}
-                  {onDelete          && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
+                  {onDelete          && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>{deleteLabel}</button>}
                 </td>
               )}
             </tr>
@@ -112,7 +112,7 @@ export default function FileDetailView({ files, onDownload, onShare, onDelete, o
                 {onShare           && <button className="btn-file-action btn-share"  onClick={() => onShare(f)}>Share</button>}
                 {onCopy            && <button className="btn-file-action btn-share"  onClick={() => onCopy(f)}>Copy to My Files</button>}
                 {onAddToCollection && <button className="btn-file-action btn-share"  onClick={() => onAddToCollection(f)}>+ Collection</button>}
-                {onDelete          && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>Delete</button>}
+                {onDelete          && <button className="btn-file-action btn-delete" onClick={() => onDelete(f._id)}>{deleteLabel}</button>}
               </div>
             )}
           </div>
