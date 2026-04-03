@@ -5,6 +5,7 @@ import AdminPage from './components/AdminPage';
 import FileManager from './components/FileManager';
 import SharedWithMe from './components/SharedWithMe';
 import SharePreview from './components/SharePreview';
+import CollectionsPage from './components/CollectionsPage';
 
 const shareToken = window.location.pathname.startsWith('/share/')
   ? window.location.pathname.slice('/share/'.length)
@@ -77,6 +78,12 @@ function App() {
             My Files
           </button>
           <button
+            className={`btn-nav${page === 'collections' ? ' btn-nav--active' : ''}`}
+            onClick={() => setPage('collections')}
+          >
+            My Collections
+          </button>
+          <button
             className={`btn-nav${page === 'shared' ? ' btn-nav--active' : ''}`}
             onClick={() => setPage('shared')}
           >
@@ -92,8 +99,9 @@ function App() {
           </button>
         </div>
       </div>
-      {page === 'dashboard' && <FileManager user={user} />}
-      {page === 'shared'    && <SharedWithMe />}
+      {page === 'dashboard'   && <FileManager user={user} />}
+      {page === 'collections' && <CollectionsPage user={user} />}
+      {page === 'shared'      && <SharedWithMe />}
     </div>
   );
 }
