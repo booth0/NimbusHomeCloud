@@ -3,6 +3,8 @@ import CollectionGridView from './CollectionGridView.jsx';
 import CollectionDetailView from './CollectionDetailView.jsx';
 import CollectionView from './CollectionView.jsx';
 import CreateCollectionModal from './CreateCollectionModal.jsx';
+import CollectionShareModal from './CollectionShareModal.jsx';
+import CollectionDeleteConfirm from './CollectionDeleteConfirm.jsx';
 
 const DEFAULT_VIEW = { mode: 'preview' };
 
@@ -39,6 +41,8 @@ export default function CollectionsPage({ user }) {
   const [error, setError]                   = useState('');
   const [openedCollection, setOpenedCollection] = useState(null); // { collection, role }
   const [createOpen, setCreateOpen]         = useState(false);
+  const [shareCollection, setShareCollection]   = useState(null);
+  const [deleteCollection, setDeleteCollection] = useState(null);
   const [view, setView]                     = useState(() => loadPref('nimbus_col_list_view', DEFAULT_VIEW));
 
   const token = () => localStorage.getItem('nimbus_token');
@@ -117,86 +121,116 @@ export default function CollectionsPage({ user }) {
     ));
   }
 
+  async function confirmDelete() {
+    const collection = deleteCollection;
+    try {
+      const res = await fetch(`/api/collections/${collection._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token()}` },
+      });
+      if (!res.ok) return setError('Failed to delete collection');
+      setCollections(prev => prev.filter(c => c._id !== collection._id));
+      if (openedCollection?.collection._id === collection._id) setOpenedCollection(null);
+      setDeleteCollection(null);
+    } catch { setError('Failed to delete collection'); }
+  }
+
   function setViewMode(mode) {
     const next = { mode };
     setView(next);
     localStorage.setItem('nimbus_col_list_view', JSON.stringify(next));
   }
 
-  if (openedCollection) {
-    return (
-      <CollectionView
-        collection={openedCollection.collection}
-        role={openedCollection.role}
-        onBack={() => setOpenedCollection(null)}
-        onShare={null}   // Phase 4
-        onDelete={null}  // Phase 4
-        onCollectionUpdated={handleCollectionUpdated}
-      />
-    );
-  }
-
   return (
     <div className="file-manager">
-      <div className="col-page-header">
-        <button className="btn-primary" onClick={() => setCreateOpen(true)}>
-          + Create Collection
-        </button>
-      </div>
-
-      {error && <p className="file-error">{error}</p>}
-
-      {loading ? (
-        <p className="file-empty">Loading collections…</p>
-      ) : collections.length === 0 ? (
-        <p className="file-empty">No collections yet. Create one to get started!</p>
+      {openedCollection ? (
+        <CollectionView
+          collection={openedCollection.collection}
+          role={openedCollection.role}
+          onBack={() => setOpenedCollection(null)}
+          onShare={setShareCollection}
+          onDelete={setDeleteCollection}
+          onCollectionUpdated={handleCollectionUpdated}
+        />
       ) : (
         <>
-          <div className="file-controls-sticky">
-            <div className="file-controls">
-              <div className="file-controls-section file-controls-section--right">
-                <div className="file-view-toggle">
-                  <button
-                    className={`file-view-btn${view.mode === 'detail' ? ' file-view-btn--active' : ''}`}
-                    onClick={() => setViewMode('detail')}
-                    title="List view"
-                  ><IconList /></button>
-                  <button
-                    className={`file-view-btn${view.mode === 'preview' ? ' file-view-btn--active' : ''}`}
-                    onClick={() => setViewMode('preview')}
-                    title="Grid view"
-                  ><IconGrid /></button>
-                </div>
-              </div>
-            </div>
+          <div className="col-page-header">
+            <button className="btn-primary" onClick={() => setCreateOpen(true)}>
+              + Create Collection
+            </button>
           </div>
 
-          {view.mode === 'detail' ? (
-            <CollectionDetailView
-              collections={collections}
-              user={user}
-              onOpen={handleOpen}
-              onDownload={handleDownload}
-              onShare={null}   // Phase 4
-              onDelete={null}  // Phase 4
-            />
+          {error && <p className="file-error">{error}</p>}
+
+          {loading ? (
+            <p className="file-empty">Loading collections…</p>
+          ) : collections.length === 0 ? (
+            <p className="file-empty">No collections yet. Create one to get started!</p>
           ) : (
-            <CollectionGridView
-              collections={collections}
-              user={user}
-              onOpen={handleOpen}
-              onDownload={handleDownload}
-              onShare={null}   // Phase 4
-              onDelete={null}  // Phase 4
+            <>
+              <div className="file-controls-sticky">
+                <div className="file-controls">
+                  <div className="file-controls-section file-controls-section--right">
+                    <div className="file-view-toggle">
+                      <button
+                        className={`file-view-btn${view.mode === 'detail' ? ' file-view-btn--active' : ''}`}
+                        onClick={() => setViewMode('detail')}
+                        title="List view"
+                      ><IconList /></button>
+                      <button
+                        className={`file-view-btn${view.mode === 'preview' ? ' file-view-btn--active' : ''}`}
+                        onClick={() => setViewMode('preview')}
+                        title="Grid view"
+                      ><IconGrid /></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {view.mode === 'detail' ? (
+                <CollectionDetailView
+                  collections={collections}
+                  user={user}
+                  onOpen={handleOpen}
+                  onDownload={handleDownload}
+                  onShare={setShareCollection}
+                  onDelete={setDeleteCollection}
+                />
+              ) : (
+                <CollectionGridView
+                  collections={collections}
+                  user={user}
+                  onOpen={handleOpen}
+                  onDownload={handleDownload}
+                  onShare={setShareCollection}
+                  onDelete={setDeleteCollection}
+                />
+              )}
+            </>
+          )}
+
+          {createOpen && (
+            <CreateCollectionModal
+              onConfirm={handleCreate}
+              onClose={() => setCreateOpen(false)}
             />
           )}
         </>
       )}
 
-      {createOpen && (
-        <CreateCollectionModal
-          onConfirm={handleCreate}
-          onClose={() => setCreateOpen(false)}
+      {/* Modals rendered outside the view conditional so they work from both list and detail views */}
+      {shareCollection && (
+        <CollectionShareModal
+          collection={shareCollection}
+          onClose={() => setShareCollection(null)}
+        />
+      )}
+
+      {deleteCollection && (
+        <CollectionDeleteConfirm
+          collection={deleteCollection}
+          onConfirm={confirmDelete}
+          onClose={() => setDeleteCollection(null)}
         />
       )}
     </div>
