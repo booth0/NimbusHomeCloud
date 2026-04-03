@@ -1291,36 +1291,31 @@ h1 {
 /* ── Collections: list grid ──────────────────────── */
 .col-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  padding: 1rem 2rem 2rem;
+  gap: 12px;
+  /* grid-template-columns set dynamically via viewSize prop */
 }
 
+/* Cell is a perfect square — matches .fpi-square */
 .col-cell {
+  aspect-ratio: 1;
   background: #1a1d27;
-  border-radius: 8px;
   cursor: pointer;
   overflow: hidden;
   position: relative;
-  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.col-cell:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  transform: translateY(-2px);
-}
-
-/* 2×2 thumbnail mosaic */
+/* 2×2 thumbnail mosaic fills the entire square */
 .col-thumb {
-  aspect-ratio: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
+  inset: 0;
   overflow: hidden;
+  position: absolute;
 }
 
 .col-thumb-quadrant {
-  background: #0f1117;
+  background: #23273a;
   overflow: hidden;
 }
 
@@ -1330,31 +1325,38 @@ h1 {
   width: 100%;
 }
 
+/* Collection name — always visible, anchored to bottom, uses text-shadow for readability */
 .col-title {
-  color: #e0e0e0;
-  font-size: 0.85rem;
+  bottom: 0;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 500;
+  left: 0;
   overflow: hidden;
-  padding: 0.45rem 0.6rem;
-  text-align: center;
+  padding: 0.4rem 0.5rem;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
   text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgba(0,0,0,1), 0 0 16px rgba(0,0,0,0.8);
   white-space: nowrap;
+  z-index: 2;
 }
 
-/* Hover overlay with action buttons */
+/* Hover overlay — matches .fpi-overlay exactly */
 .col-overlay {
   align-items: flex-end;
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
-  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
-  gap: 0.4rem;
+  flex-direction: row;
+  gap: 0.3rem;
+  inset: 0;
   justify-content: flex-end;
-  left: 0;
   opacity: 0;
   padding: 0.5rem;
   position: absolute;
-  right: 0;
-  top: 0;
   transition: opacity 0.15s;
+  z-index: 3;
 }
 
 .col-cell:hover .col-overlay {

@@ -82,12 +82,18 @@ function CollectionCell({ collection, isOwner, onOpen, onDownload, onShare, onDe
   );
 }
 
-export default function CollectionGridView({ collections, user, onOpen, onDownload, onShare, onDelete }) {
+const SIZE_PX = { small: 120, medium: 180, large: 280 };
+
+export default function CollectionGridView({ collections, user, onOpen, onDownload, onShare, onDelete, viewSize = 'medium' }) {
   if (collections.length === 0) {
     return <p className="file-empty">No collections yet.</p>;
   }
+  const cellSize = SIZE_PX[viewSize] ?? 180;
   return (
-    <div className="col-grid">
+    <div
+      className="col-grid"
+      style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${cellSize}px, 1fr))` }}
+    >
       {collections.map(c => (
         <CollectionCell
           key={c._id}

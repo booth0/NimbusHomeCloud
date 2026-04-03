@@ -14,7 +14,7 @@ const BLOB_BASE = '/api/shared-with-me';
 const DEFAULT_FILTER  = { mode: 'media', selectedTypes: [] };
 const DEFAULT_SORT    = { by: 'date', direction: 'desc' };
 const DEFAULT_VIEW    = { mode: 'preview', size: 'medium' };
-const DEFAULT_COLVIEW = { mode: 'preview' };
+const DEFAULT_COLVIEW = { mode: 'preview', size: 'medium' };
 
 function loadPref(key, fallback) {
   try { return { ...fallback, ...JSON.parse(localStorage.getItem(key)) }; }
@@ -66,9 +66,19 @@ export default function SharedWithMe() {
   const [colView, setColView] = useState(() => loadPref('nimbus_col_view_shared', DEFAULT_COLVIEW));
 
   function handleColViewMode(mode) {
-    const next = { mode };
-    setColView(next);
-    localStorage.setItem('nimbus_col_view_shared', JSON.stringify(next));
+    setColView(prev => {
+      const next = { ...prev, mode };
+      localStorage.setItem('nimbus_col_view_shared', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function handleColViewSize(size) {
+    setColView(prev => {
+      const next = { ...prev, size };
+      localStorage.setItem('nimbus_col_view_shared', JSON.stringify(next));
+      return next;
+    });
   }
 
   const token = () => localStorage.getItem('nimbus_token');
@@ -229,6 +239,18 @@ export default function SharedWithMe() {
                     title="Grid view"
                   ><IconGrid /></button>
                 </div>
+                {colView.mode === 'preview' && (
+                  <div className="file-size-toggle">
+                    {['small', 'medium', 'large'].map((s, i) => (
+                      <button
+                        key={s}
+                        className={`file-size-btn${colView.size === s ? ' file-size-btn--active' : ''}`}
+                        onClick={() => handleColViewSize(s)}
+                        title={s}
+                      >{['S', 'M', 'L'][i]}</button>
+                    ))}
+                  </div>
+                )}
               </div>
               {colView.mode === 'detail' ? (
                 <CollectionDetailView
@@ -247,6 +269,7 @@ export default function SharedWithMe() {
                   onDownload={handleDownloadCollection}
                   onShare={null}
                   onDelete={null}
+                  viewSize={colView.size}
                 />
               )}
             </>

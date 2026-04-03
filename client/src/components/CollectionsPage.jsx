@@ -6,7 +6,7 @@ import CreateCollectionModal from './CreateCollectionModal.jsx';
 import CollectionShareModal from './CollectionShareModal.jsx';
 import CollectionDeleteConfirm from './CollectionDeleteConfirm.jsx';
 
-const DEFAULT_VIEW = { mode: 'preview' };
+const DEFAULT_VIEW = { mode: 'preview', size: 'medium' };
 
 function loadPref(key, fallback) {
   try { return { ...fallback, ...JSON.parse(localStorage.getItem(key)) }; }
@@ -136,9 +136,19 @@ export default function CollectionsPage({ user }) {
   }
 
   function setViewMode(mode) {
-    const next = { mode };
-    setView(next);
-    localStorage.setItem('nimbus_col_list_view', JSON.stringify(next));
+    setView(prev => {
+      const next = { ...prev, mode };
+      localStorage.setItem('nimbus_col_list_view', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function setViewSize(size) {
+    setView(prev => {
+      const next = { ...prev, size };
+      localStorage.setItem('nimbus_col_list_view', JSON.stringify(next));
+      return next;
+    });
   }
 
   return (
@@ -183,6 +193,18 @@ export default function CollectionsPage({ user }) {
                         title="Grid view"
                       ><IconGrid /></button>
                     </div>
+                    {view.mode === 'preview' && (
+                      <div className="file-size-toggle">
+                        {['small', 'medium', 'large'].map((s, i) => (
+                          <button
+                            key={s}
+                            className={`file-size-btn${view.size === s ? ' file-size-btn--active' : ''}`}
+                            onClick={() => setViewSize(s)}
+                            title={s}
+                          >{['S', 'M', 'L'][i]}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -204,6 +226,7 @@ export default function CollectionsPage({ user }) {
                   onDownload={handleDownload}
                   onShare={setShareCollection}
                   onDelete={setDeleteCollection}
+                  viewSize={view.size}
                 />
               )}
             </>
