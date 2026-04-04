@@ -33,13 +33,19 @@ app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello World!' });
 });
 
-const sslOptions = {
-  key:  fs.readFileSync(process.env.SSL_KEY_PATH  || './certs/key.pem'),
-  cert: fs.readFileSync(process.env.SSL_CERT_PATH || './certs/cert.pem'),
-};
-
 connectDB().then(() => {
-  https.createServer(sslOptions, app).listen(PORT, () => {
-    console.log(`Server running on https://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV === 'production') {
+    // In production, nginx terminates SSL — Node listens on plain HTTP
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  } else {
+    const sslOptions = {
+      key:  fs.readFileSync(process.env.SSL_KEY_PATH  || './certs/key.pem'),
+      cert: fs.readFileSync(process.env.SSL_CERT_PATH || './certs/cert.pem'),
+    };
+    https.createServer(sslOptions, app).listen(PORT, () => {
+      console.log(`Server running on https://localhost:${PORT}`);
+    });
+  }
 });
