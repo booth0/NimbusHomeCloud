@@ -1,0 +1,7 @@
+tunnel: dd3ab4fb-c627-451b-8573-9db0b36396d9
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: nimbushomecloud.com
+    service: http://client:80
+  - service: http_status:404

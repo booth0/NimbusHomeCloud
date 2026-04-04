@@ -34,6 +34,17 @@ services:
     networks:
       - nimbus-net
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - client
+    networks:
+      - nimbus-net
+
 networks:
   nimbus-net:
     driver: bridge
