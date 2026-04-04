@@ -1,0 +1,39 @@
+services:
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - /mnt/storage/mongodb:/data/db
+    networks:
+      - nimbus-net
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - mongo
+    volumes:
+      - /mnt/storage/uploads:/app/uploads
+    networks:
+      - nimbus-net
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - nimbus-net
+
+networks:
+  nimbus-net:
+    driver: bridge
