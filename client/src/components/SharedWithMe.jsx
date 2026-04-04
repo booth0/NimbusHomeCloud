@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
 import FileControls from './FileControls.jsx';
 import FileDetailView from './FileDetailView.jsx';
 import FileGridView from './FileGridView.jsx';
@@ -86,6 +87,23 @@ export default function SharedWithMe() {
   useEffect(() => {
     loadShared();
     loadSharedCollections();
+  }, []);
+
+  // Live reload: refetch when files are changed on any client
+  useEffect(() => {
+    const socket = io();
+    let debounceTimer;
+    socket.on('files:changed', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        loadShared();
+        loadSharedCollections();
+      }, 300);
+    });
+    return () => {
+      clearTimeout(debounceTimer);
+      socket.disconnect();
+    };
   }, []);
 
   async function loadShared() {

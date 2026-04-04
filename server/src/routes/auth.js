@@ -8,13 +8,15 @@ import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { error: 'Too many attempts, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const authLimiter = process.env.NODE_ENV === 'test'
+  ? (req, res, next) => next()
+  : rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 20,
+      message: { error: 'Too many attempts, please try again later.' },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
 
 // POST /api/auth/register
 router.post('/register', authLimiter, [

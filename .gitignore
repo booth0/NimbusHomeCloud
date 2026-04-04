@@ -7,3 +7,4 @@ server/uploads/
 server/certs/
 CLAUDE.md
 cloudflared/credentials.json
+coverage/

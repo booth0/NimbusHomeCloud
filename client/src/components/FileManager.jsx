@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
 import ShareModal from './ShareModal';
 import SelectionBar from './SelectionBar.jsx';
 import ZipNameModal from './ZipNameModal.jsx';
@@ -86,6 +87,20 @@ export default function FileManager({ user }) {
   }
 
   useEffect(() => { loadFiles(); }, []);
+
+  // Live reload: refetch when any client uploads or deletes a file
+  useEffect(() => {
+    const socket = io();
+    let debounceTimer;
+    socket.on('files:changed', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(loadFiles, 300);
+    });
+    return () => {
+      clearTimeout(debounceTimer);
+      socket.disconnect();
+    };
+  }, []);
 
   // Uploads a single browser File object; returns the server file document.
   async function uploadSingle(file) {

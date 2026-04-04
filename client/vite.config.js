@@ -21,6 +21,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/socket.io': {
+        target: isProd ? 'http://localhost:5000' : 'https://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+      },
     },
   },
 });

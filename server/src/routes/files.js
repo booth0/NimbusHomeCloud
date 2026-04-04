@@ -75,6 +75,7 @@ router.post('/upload', requireAuth, upload.array('files', 50), async (req, res) 
       });
       uploadedFiles.push(file);
     }
+    req.app.get('io')?.emit('files:changed');
     res.status(201).json({ files: uploadedFiles });
   } catch (err) {
     console.error('Upload error:', err);
@@ -308,6 +309,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       UserShare.deleteMany({ fileId: file._id }),
       Collection.updateMany({ files: file._id }, { $pull: { files: file._id } }),
     ]);
+    req.app.get('io')?.emit('files:changed');
     res.json({ message: 'File deleted' });
   } catch (err) {
     console.error('Delete error:', err);
