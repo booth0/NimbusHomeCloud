@@ -36,7 +36,8 @@ router.post('/register', authLimiter, [
     }
 
     const hashed = await bcrypt.hash(password, 12);
-    const user = await User.create({ username, email, password: hashed, role: 'user' });
+    const userCount = await User.countDocuments();
+    const user = await User.create({ username, email, password: hashed, role: userCount === 0 ? 'admin' : 'user' });
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({ token, user });
