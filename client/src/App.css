@@ -655,18 +655,8 @@ h1 {
 }
 .file-sort-select:focus { outline: none; border-color: #7eb8f7; }
 
-.file-sort-dir {
-  background: transparent;
-  border: 1px solid #2e3244;
-  border-radius: 6px;
-  color: #a0a8b8;
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 0.3rem 0.65rem;
-  white-space: nowrap;
-  transition: border-color 0.15s, color 0.15s;
-}
-.file-sort-dir:hover { border-color: #7eb8f7; color: #7eb8f7; }
+.file-filter-tab--right { margin-left: auto; }
+
 
 /* View mode toggle */
 .file-view-toggle {
@@ -794,6 +784,7 @@ h1 {
 .fpi-cell {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .fpi-square {
@@ -1300,6 +1291,7 @@ h1 {
   aspect-ratio: 1;
   background: #1a1d27;
   cursor: pointer;
+  min-width: 0;
   overflow: hidden;
   position: relative;
 }
@@ -1426,4 +1418,203 @@ h1 {
 
 .col-controls-bar {
   border-top: 1px solid #1e2235;
+}
+
+/* ═══════════════════════════════════════════════════
+   Phase 4 — Mobile UI
+   ═══════════════════════════════════════════════════ */
+
+/* ── 4.6 FileControls label spans ───────────────── */
+.label-short { display: none; }
+
+/* ── 4.5 FilePreviewModal — mobile full-screen ───── */
+.fpm-container.fpm-mobile {
+  border-radius: 0;
+  flex-direction: column;
+  height: 100dvh;
+  inset: 0;
+  max-height: none;
+  overflow-y: auto;
+  position: fixed;
+  width: 100%;
+}
+
+.fpm-mobile .fpm-close {
+  position: fixed;
+  right: 1rem;
+  top: 1rem;
+  z-index: 210;
+}
+
+.fpm-mobile .fpm-preview {
+  flex: none;
+  height: calc(100vh - 3.5rem);
+  max-height: none;
+  min-height: 0;
+}
+
+.fpm-mobile .fpm-details {
+  border-left: none;
+  border-top: 1px solid #2e3244;
+  padding-bottom: 4rem;
+}
+
+.fpm-mobile-actions {
+  align-items: center;
+  background: rgba(26, 29, 39, 0.97);
+  border-top: 1px solid #2e3244;
+  bottom: 0;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-around;
+  left: 0;
+  padding: 0.6rem 1rem;
+  position: fixed;
+  right: 0;
+  z-index: 205;
+}
+
+.fpm-mab-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: #e0e0e0;
+  cursor: pointer;
+  font-size: 1.2rem;
+  min-width: 2.75rem;
+  padding: 0.5rem;
+  transition: background 0.15s;
+}
+.fpm-mab-btn:hover         { background: rgba(255, 255, 255, 0.2); }
+.fpm-mab-btn--delete:hover { background: rgba(248, 113, 113, 0.3); }
+
+/* ── 4.1 Bottom Tab Bar ─────────────────────────── */
+.bottom-tab-bar {
+  bottom: 0;
+  display: none;
+  left: 0;
+  position: fixed;
+  right: 0;
+  z-index: 110;
+}
+
+/* ══════════════════════════════════════════════════
+   Mobile breakpoint (max-width: 600px)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+
+  /* 4.1 — Hide header nav on mobile */
+  .dashboard-actions .btn-nav,
+  .dashboard-actions .btn-logout,
+  .dashboard-actions .btn-admin {
+    display: none;
+  }
+
+  /* Add padding so bottom tab bar doesn't cover content */
+  .dashboard { padding-bottom: 4.5rem; }
+
+  /* Show bottom tab bar */
+  .bottom-tab-bar {
+    background: #1a1d27;
+    border-top: 1px solid #2e3244;
+    display: flex;
+  }
+
+  .btb-tab {
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: #a0a8b8;
+    cursor: pointer;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    font-size: 0.68rem;
+    gap: 0.15rem;
+    justify-content: center;
+    padding: 0.9rem 0.25rem;
+    transition: color 0.15s;
+  }
+  .btb-tab--active { color: #7eb8f7; }
+
+  .btb-more-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .btb-more-wrap .btb-tab { width: 100%; }
+
+  .btb-more-sheet {
+    background: #1a1d27;
+    border: 1px solid #2e3244;
+    border-radius: 8px 8px 0 0;
+    bottom: 100%;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    left: auto;
+    min-width: 160px;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+  }
+
+  .btb-sheet-item {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #2e3244;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .btb-sheet-item:last-child { border-bottom: none; }
+  .btb-sheet-item:hover      { background: #23273a; }
+
+  /* 4.2 — Upload zone: show only upload button */
+  .btn-upload--folder { display: none; }
+  .file-upload-hint   { display: none; }
+  .file-upload-zone {
+    border-color: transparent;
+    padding: 0.4rem 0;
+  }
+
+  /* 4.3 — Grid edge-to-edge + column sizing */
+  .file-grid {
+    margin-left: -2rem;
+    margin-right: -2rem;
+    width: calc(100% + 4rem);
+  }
+
+  .file-grid[data-size="small"]  { grid-template-columns: repeat(5, 1fr) !important; }
+  .file-grid[data-size="medium"] { grid-template-columns: repeat(3, 1fr) !important; }
+  .file-grid[data-size="large"]  { grid-template-columns: repeat(1, 1fr) !important; }
+
+  .col-grid[data-size="small"]   { grid-template-columns: repeat(5, 1fr) !important; }
+  .col-grid[data-size="medium"]  { grid-template-columns: repeat(3, 1fr) !important; }
+  .col-grid[data-size="large"]   { grid-template-columns: repeat(1, 1fr) !important; }
+
+  /* 4.4 — Hide hover overlays; tap opens modal directly */
+  .fpi-overlay  { display: none; }
+  .fpi-add-btn  { display: none; }
+  .col-overlay  { display: none; }
+
+  /* 4.5 — Backdrop alignment for full-screen modal */
+  .fpm-backdrop { padding: 0; align-items: flex-start; }
+
+  /* 4.6 — Filter tab short labels */
+  .label-full  { display: none; }
+  .label-short { display: inline; }
+
+  /* 4.6 — Sort/view row: horizontal scroll, no wrap */
+  .file-controls-section--right {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .file-controls-section--right::-webkit-scrollbar { display: none; }
 }

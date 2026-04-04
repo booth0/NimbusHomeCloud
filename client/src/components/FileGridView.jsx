@@ -18,6 +18,7 @@ export default function FileGridView({ files, filter, viewSize, blobBaseUrl, onD
   return (
     <div
       className="file-grid"
+      data-size={viewSize}
       style={{
         gridTemplateColumns: `repeat(auto-fill, minmax(${cellSize}px, 1fr))`,
         gap: `${gap}px`,

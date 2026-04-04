@@ -14,6 +14,7 @@ const shareToken = window.location.pathname.startsWith('/share/')
 function App() {
   const [user, setUser] = useState(null); // null = loading, false = logged out, {...} = logged in
   const [page, setPage] = useState('dashboard'); // 'dashboard' | 'shared' | 'admin'
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('nimbus_token');
@@ -65,44 +66,86 @@ function App() {
   }
 
   return (
-    <div className="dashboard">
-      <div className="dashboard-header">
-        <h1>Nimbus Home Cloud</h1>
-        <div className="dashboard-actions">
-          <span className={`role-badge role-${user.role}`}>{user.role}</span>
-          <span className="username">Welcome, {user.username}</span>
-          <button
-            className={`btn-nav${page === 'dashboard' ? ' btn-nav--active' : ''}`}
-            onClick={() => setPage('dashboard')}
-          >
-            My Files
-          </button>
-          <button
-            className={`btn-nav${page === 'collections' ? ' btn-nav--active' : ''}`}
-            onClick={() => setPage('collections')}
-          >
-            My Collections
-          </button>
-          <button
-            className={`btn-nav${page === 'shared' ? ' btn-nav--active' : ''}`}
-            onClick={() => setPage('shared')}
-          >
-            Shared with Me
-          </button>
-          {user.role === 'admin' && (
-            <button className="btn-admin" onClick={() => setPage('admin')}>
-              Admin Panel
+    <>
+      <div className="dashboard">
+        <div className="dashboard-header">
+          <h1>Nimbus Home Cloud</h1>
+          <div className="dashboard-actions">
+            <button
+              className={`btn-nav${page === 'dashboard' ? ' btn-nav--active' : ''}`}
+              onClick={() => setPage('dashboard')}
+            >
+              My Files
             </button>
-          )}
-          <button className="btn-logout" onClick={handleSignOut}>
-            Sign Out
-          </button>
+            <button
+              className={`btn-nav${page === 'collections' ? ' btn-nav--active' : ''}`}
+              onClick={() => setPage('collections')}
+            >
+              My Collections
+            </button>
+            <button
+              className={`btn-nav${page === 'shared' ? ' btn-nav--active' : ''}`}
+              onClick={() => setPage('shared')}
+            >
+              Shared with Me
+            </button>
+            {user.role === 'admin' && (
+              <button className="btn-admin" onClick={() => setPage('admin')}>
+                Admin Panel
+              </button>
+            )}
+            <button className="btn-logout" onClick={handleSignOut}>
+              Sign Out
+            </button>
+          </div>
         </div>
+        {page === 'dashboard'   && <FileManager user={user} />}
+        {page === 'collections' && <CollectionsPage user={user} />}
+        {page === 'shared'      && <SharedWithMe />}
       </div>
-      {page === 'dashboard'   && <FileManager user={user} />}
-      {page === 'collections' && <CollectionsPage user={user} />}
-      {page === 'shared'      && <SharedWithMe />}
-    </div>
+
+      {/* Mobile bottom tab bar — sibling of .dashboard so position:fixed is never affected by a parent */}
+      <nav className="bottom-tab-bar">
+        <button
+          className={`btb-tab${page === 'dashboard' ? ' btb-tab--active' : ''}`}
+          onClick={() => setPage('dashboard')}
+        >
+          Files
+        </button>
+        <button
+          className={`btb-tab${page === 'collections' ? ' btb-tab--active' : ''}`}
+          onClick={() => setPage('collections')}
+        >
+          Collections
+        </button>
+        <button
+          className={`btb-tab${page === 'shared' ? ' btb-tab--active' : ''}`}
+          onClick={() => setPage('shared')}
+        >
+          Shared
+        </button>
+        <div className="btb-more-wrap">
+          <button
+            className={`btb-tab${moreOpen ? ' btb-tab--active' : ''}`}
+            onClick={() => setMoreOpen(o => !o)}
+          >
+            ⋯
+          </button>
+          {moreOpen && (
+            <div className="btb-more-sheet">
+              {user.role === 'admin' && (
+                <button className="btb-sheet-item" onClick={() => { setPage('admin'); setMoreOpen(false); }}>
+                  Admin Panel
+                </button>
+              )}
+              <button className="btb-sheet-item" onClick={() => { handleSignOut(); setMoreOpen(false); }}>
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
+      </nav>
+    </>
   );
 }
 

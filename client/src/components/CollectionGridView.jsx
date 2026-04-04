@@ -92,6 +92,7 @@ export default function CollectionGridView({ collections, user, onOpen, onDownlo
   return (
     <div
       className="col-grid"
+      data-size={viewSize}
       style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${cellSize}px, 1fr))` }}
     >
       {collections.map(c => (

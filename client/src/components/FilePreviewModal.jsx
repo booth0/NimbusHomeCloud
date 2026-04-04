@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react';
 import useFileBlob from '../hooks/useFileBlob.js';
 import { getExtension, isMedia } from '../utils/fileUtils.js';
 
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const handler = e => setMatches(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [query]);
+  return matches;
+}
+
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -66,6 +77,7 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
   const token = localStorage.getItem('nimbus_token');
   const { blobUrl, loading } = useFileBlob(file._id, token, blobBaseUrl);
   const [sharedUsers, setSharedUsers] = useState([]);
+  const isMobile = useMediaQuery('(max-width: 600px)');
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -97,7 +109,7 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
 
   return (
     <div className="fpm-backdrop" onClick={onClose}>
-      <div className="fpm-container" onClick={e => e.stopPropagation()}>
+      <div className={`fpm-container${isMobile ? ' fpm-mobile' : ''}`} onClick={e => e.stopPropagation()}>
 
         {/* X button */}
         <button className="fpm-close" onClick={onClose} title="Close">✕</button>
@@ -151,6 +163,17 @@ export default function FilePreviewModal({ file, onClose, onDownload, onShare, o
             {onDelete          && <button className="btn-file-action btn-delete" onClick={() => { onDelete(file._id); onClose(); }}>{deleteLabel}</button>}
           </div>
         </div>
+
+        {/* Mobile-only icon action bar pinned to viewport bottom */}
+        {isMobile && (
+          <div className="fpm-mobile-actions">
+            <button className="fpm-mab-btn" title="Download" onClick={() => onDownload(file)}>⬇</button>
+            {onShare           && <button className="fpm-mab-btn" title="Share" onClick={() => onShare(file)}>🔗</button>}
+            {onCopy            && <button className="fpm-mab-btn" title="Copy to My Files" onClick={() => onCopy(file)}>📋</button>}
+            {onAddToCollection && <button className="fpm-mab-btn" title="Add to Collection" onClick={() => onAddToCollection(file)}>➕</button>}
+            {onDelete          && <button className="fpm-mab-btn fpm-mab-btn--delete" title={deleteLabel} onClick={() => { onDelete(file._id); onClose(); }}>🗑</button>}
+          </div>
+        )}
       </div>
     </div>
   );

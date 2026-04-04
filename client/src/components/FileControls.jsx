@@ -1,21 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 
 const FILTER_TABS = [
-  { label: 'Photos & Videos', mode: 'media' },
-  { label: 'Other Files',     mode: 'non-media' },
-  { label: 'All Files',       mode: 'all' },
+  { label: 'Photos & Videos', shortLabel: 'Media', mode: 'media' },
+  { label: 'Other Files',     shortLabel: 'Other', mode: 'non-media' },
+  { label: 'All Files',       shortLabel: 'All',   mode: 'all' },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'date',     label: 'Date Taken' },
-  { value: 'uploaded', label: 'Upload Date' },
-  { value: 'name',     label: 'Name' },
+  { value: 'date-desc',     label: 'Date Taken — Newest First' },
+  { value: 'date-asc',      label: 'Date Taken — Oldest First' },
+  { value: 'uploaded-desc', label: 'Upload Date — Newest First' },
+  { value: 'uploaded-asc',  label: 'Upload Date — Oldest First' },
+  { value: 'name-asc',      label: 'Name — A → Z' },
+  { value: 'name-desc',     label: 'Name — Z → A' },
 ];
-
-function directionLabel(by, direction) {
-  if (by === 'name') return direction === 'asc' ? 'A → Z' : 'Z → A';
-  return direction === 'desc' ? 'Newest First' : 'Oldest First';
-}
 
 // Simple grid / list SVG icons
 function IconGrid() {
@@ -79,7 +77,8 @@ export default function FileControls({ filter, sort, view, availableTypes, onFil
               className={`file-filter-tab${filter.mode === tab.mode ? ' file-filter-tab--active' : ''}`}
               onClick={() => handleFilterTab(tab.mode)}
             >
-              {tab.label}
+              <span className="label-full">{tab.label}</span>
+              <span className="label-short">{tab.shortLabel}</span>
             </button>
           ))}
         </div>
@@ -114,26 +113,32 @@ export default function FileControls({ filter, sort, view, availableTypes, onFil
             )}
           </div>
         )}
+
+        {/* Select button — pinned to right of the filter row */}
+        {onSelectMode && (
+          <button
+            className={`file-filter-tab file-filter-tab--right${selectMode ? ' file-filter-tab--active' : ''}`}
+            onClick={() => onSelectMode(!selectMode)}
+          >
+            {selectMode ? 'Cancel Select' : 'Select'}
+          </button>
+        )}
       </div>
 
-      {/* Sort */}
+      {/* Row 2: sort + view controls */}
       <div className="file-controls-section file-controls-section--right">
         <select
           className="file-sort-select"
-          value={sort.by}
-          onChange={e => onSortChange({ ...sort, by: e.target.value })}
+          value={`${sort.by}-${sort.direction}`}
+          onChange={e => {
+            const [by, direction] = e.target.value.split('-');
+            onSortChange({ by, direction });
+          }}
         >
           {SORT_OPTIONS.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
-        <button
-          className="file-sort-dir"
-          onClick={() => onSortChange({ ...sort, direction: sort.direction === 'asc' ? 'desc' : 'asc' })}
-          title="Toggle sort direction"
-        >
-          {sort.direction === 'desc' ? '↓' : '↑'} {directionLabel(sort.by, sort.direction)}
-        </button>
 
         {/* View mode */}
         <div className="file-view-toggle">
@@ -166,15 +171,6 @@ export default function FileControls({ filter, sort, view, availableTypes, onFil
               </button>
             ))}
           </div>
-        )}
-
-        {onSelectMode && (
-          <button
-            className={`file-filter-tab${selectMode ? ' file-filter-tab--active' : ''}`}
-            onClick={() => onSelectMode(!selectMode)}
-          >
-            {selectMode ? 'Cancel Select' : 'Select'}
-          </button>
         )}
       </div>
     </div>
