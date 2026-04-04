@@ -6,16 +6,18 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const isProd = process.env.NODE_ENV === 'production';
+
 export default defineConfig({
   plugins: [react()],
   server: {
-    https: {
+    https: isProd ? false : {
       key:  fs.readFileSync(path.resolve(__dirname, '../server/certs/key.pem')),
       cert: fs.readFileSync(path.resolve(__dirname, '../server/certs/cert.pem')),
     },
     proxy: {
       '/api': {
-        target: 'https://localhost:5000',
+        target: isProd ? 'http://localhost:5000' : 'https://localhost:5000',
         changeOrigin: true,
         secure: false,
       },
