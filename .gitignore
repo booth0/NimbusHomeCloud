@@ -6,3 +6,4 @@ package-lock.json
 server/uploads/
 server/certs/
 CLAUDE.md
+cloudflared/credentials.json
