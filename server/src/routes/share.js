@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { ShareLink } from '../models/ShareLink.js';
 import { File } from '../models/File.js';
 import { decryptBuffer } from '../utils/encryption.js';
+import { isPreviewable } from '../utils/fileUtils.js';
 
 const router = Router();
 
@@ -55,8 +56,7 @@ router.get('/:token', async (req, res) => {
     if (!file) return res.status(404).json({ error: 'File not found' });
 
     // 4. Decrypt and send file
-    const previewable = /^(image|video|audio)\/.+$|^application\/pdf$|^text\/.+$/.test(file.mimetype);
-    const disposition = previewable ? 'inline' : 'attachment';
+    const disposition = isPreviewable(file.mimetype) ? 'inline' : 'attachment';
     const raw = await fs.promises.readFile(file.path);
     const output = file.encrypted
       ? decryptBuffer({ encrypted: raw, iv: file.iv, authTag: file.authTag })

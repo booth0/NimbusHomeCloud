@@ -14,7 +14,7 @@ import { Collection } from '../models/Collection.js';
 import { requireAuth } from '../middleware/auth.js';
 import { encryptBuffer, decryptBuffer } from '../utils/encryption.js';
 
-const ALLOWED_EXPIRY = { '1h': 1, '24h': 24, '7d': 168, '30d': 720 }; // values unused, just for validation
+const ALLOWED_EXPIRY = ['1h', '24h', '7d', '30d'];
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -158,7 +158,7 @@ router.post('/:id/share', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
 
     const { expiresIn } = req.body;
-    if (!expiresIn || !Object.keys(ALLOWED_EXPIRY).includes(expiresIn))
+    if (!expiresIn || !ALLOWED_EXPIRY.includes(expiresIn))
       return res.status(400).json({ error: 'expiresIn must be one of: 1h, 24h, 7d, 30d' });
 
     const jti = randomUUID();
